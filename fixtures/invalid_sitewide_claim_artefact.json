@@ -1,0 +1,128 @@
+{
+  "stage": "brief",
+  "entity": "Rolls-Royce Holdings plc",
+  "domain": "rolls-royce.com",
+  "generated_at": "2026-03-06T10:00:00Z",
+  "scope": {
+    "focus": "investor communications",
+    "confirmed_at": "2026-03-06T09:55:00Z"
+  },
+  "capabilities_used": ["web_fetch"],
+  "executive_summary": "Assessment of the Rolls-Royce website.",
+  "evidence_items": [
+    {
+      "evidence_id": "E-010",
+      "source_url": "https://www.rolls-royce.com/investors.aspx",
+      "evidence_area": "ir_landing_page",
+      "section": "investors",
+      "collection_method": "web_fetch"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "C-010",
+      "entity": "Rolls-Royce Holdings plc",
+      "domain": "rolls-royce.com",
+      "stage": "brief",
+      "statement": "There is no investment case page on the site",
+      "claim_type": "gap",
+      "scope": "rolls-royce.com",
+      "certainty": "confirmed",
+      "method": "web_fetch",
+      "evidence_ids": ["E-010"],
+      "source_finding_ids": [],
+      "status": "active",
+      "supersedes_claim_id": null,
+      "created_at": "2026-03-06T10:00:00Z"
+    },
+    {
+      "claim_id": "C-011",
+      "entity": "Rolls-Royce Holdings plc",
+      "domain": "rolls-royce.com",
+      "stage": "brief",
+      "statement": "The company does not have any ESG reporting",
+      "claim_type": "gap",
+      "scope": "company",
+      "certainty": "confirmed",
+      "method": "web_fetch",
+      "evidence_ids": ["E-010"],
+      "source_finding_ids": [],
+      "status": "active",
+      "supersedes_claim_id": null,
+      "created_at": "2026-03-06T10:00:00Z"
+    },
+    {
+      "claim_id": "C-010",
+      "entity": "Rolls-Royce Holdings plc",
+      "domain": "rolls-royce.com",
+      "stage": "brief",
+      "statement": "Duplicate claim ID",
+      "claim_type": "fact",
+      "scope": "test",
+      "certainty": "badvalue",
+      "method": "web_fetch",
+      "evidence_ids": ["E-010"],
+      "source_finding_ids": [],
+      "status": "invalid_status",
+      "supersedes_claim_id": null,
+      "created_at": "2026-03-06T10:00:00Z"
+    }
+  ],
+  "claim_builder_errors": [],
+  "findings": [
+    {
+      "id": "F-010",
+      "classification": "FACT",
+      "claim": "There is no investment case page on the site",
+      "evidence": ["E-010"],
+      "citations": [1],
+      "severity": "negative",
+      "section": "website_assessment"
+    },
+    {
+      "id": "F-011",
+      "classification": "FACT",
+      "claim": "The site has no ESG reporting",
+      "claim_ids": ["C-099"],
+      "evidence": ["E-010"],
+      "citations": [1],
+      "severity": "negative",
+      "section": "website_assessment"
+    }
+  ],
+  "gap_analysis": [],
+  "synthesis": {
+    "overall_assessment": "[JUDGEMENT] Major gaps identified.",
+    "priorities": [
+      {
+        "priority": 1,
+        "recommendation": "Add investment case page",
+        "rationale": "Major gap",
+        "effort": "medium",
+        "impact": "high"
+      }
+    ]
+  },
+  "rendered_units": [
+    {
+      "unit_id": "RU-010",
+      "text": "There is no investment case page anywhere on the site.",
+      "claim_ids": ["C-010"]
+    },
+    {
+      "unit_id": "RU-011",
+      "text": "This clearly demonstrates that the company has definitively failed to provide ESG reporting.",
+      "claim_ids": ["C-011"]
+    }
+  ],
+  "limitations": [],
+  "citations": [
+    {
+      "ref": 1,
+      "type": "web_page",
+      "source": "https://www.rolls-royce.com/investors.aspx",
+      "accessed": "2026-03-06",
+      "claims_supported": ["C-010"]
+    }
+  ]
+}

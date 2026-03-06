@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mercury.idx.inc/schemas/claim.schema.json",
+  "title": "Mercury Claim",
+  "description": "An atomic, scope-bounded statement about an entity under analysis.",
+  "type": "object",
+  "required": [
+    "claim_id",
+    "entity",
+    "domain",
+    "stage",
+    "statement",
+    "claim_type",
+    "scope",
+    "certainty",
+    "method",
+    "status",
+    "created_at"
+  ],
+  "properties": {
+    "claim_id": {
+      "type": "string",
+      "pattern": "^C-(L?)[0-9]{3,}$",
+      "description": "Stable identifier. Format C-NNN or C-LNNN for legacy-derived."
+    },
+    "entity": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Company or peer the claim concerns."
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Site domain, e.g. rolls-royce.com."
+    },
+    "stage": {
+      "type": "string",
+      "enum": ["brief", "compete", "sitemap", "meeting"],
+      "description": "Pipeline stage that produced this claim."
+    },
+    "statement": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Tightly bounded claim sentence."
+    },
+    "claim_type": {
+      "type": "string",
+      "enum": ["fact", "inference", "gap", "recommendation_support", "judgement_support"],
+      "description": "Classification of the claim."
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Explicit boundary of what was assessed."
+    },
+    "certainty": {
+      "type": "string",
+      "enum": ["confirmed", "observed", "inferred", "not_assessed"],
+      "description": "Confidence level of the claim."
+    },
+    "method": {
+      "type": "string",
+      "enum": ["web_fetch", "web_search", "benchmark_snapshot", "prior_stage_artefact", "manual_override"],
+      "description": "How the evidence was collected."
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^E-[0-9]{3,}$"
+      },
+      "description": "Evidence items supporting this claim. Required unless method is prior_stage_artefact."
+    },
+    "source_finding_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^F-[0-9]{3,}$"
+      },
+      "description": "Finding IDs this claim supports."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "superseded", "disputed", "withdrawn", "provisional_legacy"],
+      "description": "Current lifecycle status."
+    },
+    "supersedes_claim_id": {
+      "type": ["string", "null"],
+      "pattern": "^C-(L?)[0-9]{3,}$",
+      "description": "ID of claim this one replaces."
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp."
+    }
+  },
+  "additionalProperties": false
+}

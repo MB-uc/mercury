@@ -90,9 +90,11 @@ raw material.
 6. **Claim construction** — build atomic claims from evidence using the claim builder (see `references/CLAIM_SCHEMA.md`). Every claim must pass construction-time validation: required fields, scope boundary, certainty vocabulary, evidence linkage. **Unsupported site-wide claims and unbounded negative claims are rejected here — they never enter the artefact.** Rejected claims are recorded in `claim_builder_errors[]`.
 7. **Analysis** — reason over collected evidence and validated claims only
 8. **Claim classification** — tag every substantive claim (re-read rules before each section)
-9. **Artefact compilation** — save `{company}-{stage}-artefact.json` with `claims[]`, `claim_builder_errors[]`, and claim-linked `findings[]`
-10. **Markdown rendering** — generate report from claims and claim-backed findings (not freehand prose)
-11. **Compliance self-check** — run checks A–N (Stage 1) or A–H, J–N (Stages 2–4); repair failures
+9. **Artefact compilation** — save `{company}-{stage}-artefact.json` with `claims[]`, `claim_builder_errors[]`, claim-linked `findings[]`, and `rendered_units[]`
+10. **Rendered unit construction** — before assembling final markdown, build discrete `rendered_units[]` — each a narrative chunk with `unit_id`, `text`, and `claim_ids`. This is the validator checkpoint.
+11. **Artefact validation** — run `python validators/validate_artefact.py {artefact}.json`. If the validator returns FAIL, the artefact is rejected. Fix the errors and re-run. The validator checks claim structure, scope discipline, traceability, and rendered language against claim boundaries. This is **hard enforcement** — a failing artefact cannot proceed to the next stage.
+12. **Markdown rendering** — assemble final report from validated rendered units (not freehand prose)
+13. **Compliance self-check** — run checks A–N (Stage 1) or A–H, J–N (Stages 2–4); repair failures
 
 During reasoning, do not make additional tool calls. If you discover a gap in evidence, record
 it in the limitations section — do not attempt to fill it. This boundary is critical. Violations
@@ -510,6 +512,20 @@ claim IDs. See `references/CLAIM_SCHEMA.md` for the full claim schema.
       }
     ]
   },
+  "rendered_units": [
+    {
+      "unit_id": "RU-001",
+      "text": "The IR landing page lists three upcoming results dates, providing clear visibility of the reporting calendar.",
+      "claim_ids": ["C-001"],
+      "section": "website_assessment"
+    },
+    {
+      "unit_id": "RU-002",
+      "text": "No dedicated investment case page was identified in the reviewed IR pages.",
+      "claim_ids": ["C-003"],
+      "section": "gap_analysis"
+    }
+  ],
   "limitations": [
     "No screenshots captured (evidence_collector unavailable)",
     "Situational context limited to web_search snippets"

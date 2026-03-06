@@ -1,0 +1,172 @@
+{
+  "stage": "brief",
+  "entity": "Inchcape plc",
+  "domain": "inchcape.com",
+  "generated_at": "2026-03-06T10:00:00Z",
+  "scope": {
+    "focus": "full website assessment",
+    "confirmed_at": "2026-03-06T09:55:00Z"
+  },
+  "capabilities_used": ["web_fetch"],
+  "executive_summary": "Assessment of the Inchcape website.",
+  "evidence_items": [
+    {
+      "evidence_id": "E-020",
+      "source_url": "https://www.inchcape.com/about-us",
+      "evidence_area": "about_section",
+      "section": "about",
+      "collection_method": "web_fetch"
+    },
+    {
+      "evidence_id": "E-021",
+      "source_url": "https://www.inchcape.com/sustainability",
+      "evidence_area": "sustainability_section",
+      "section": "sustainability",
+      "collection_method": "web_fetch"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "C-020",
+      "entity": "Inchcape plc",
+      "domain": "inchcape.com",
+      "stage": "brief",
+      "statement": "The about us page contains a board of directors listing",
+      "claim_type": "fact",
+      "scope": "about us page only",
+      "certainty": "confirmed",
+      "method": "web_fetch",
+      "evidence_ids": ["E-020"],
+      "source_finding_ids": [],
+      "status": "active",
+      "supersedes_claim_id": null,
+      "created_at": "2026-03-06T10:00:00Z"
+    },
+    {
+      "claim_id": "C-021",
+      "entity": "Inchcape plc",
+      "domain": "inchcape.com",
+      "stage": "brief",
+      "statement": "No ESG report link was found on the sustainability landing page",
+      "claim_type": "gap",
+      "scope": "sustainability landing page",
+      "certainty": "observed",
+      "method": "web_fetch",
+      "evidence_ids": ["E-021"],
+      "source_finding_ids": [],
+      "status": "active",
+      "supersedes_claim_id": null,
+      "created_at": "2026-03-06T10:00:00Z"
+    },
+    {
+      "claim_id": "C-L001",
+      "entity": "Inchcape plc",
+      "domain": "inchcape.com",
+      "stage": "brief",
+      "statement": "The careers section includes job listings",
+      "claim_type": "fact",
+      "scope": "legacy artefact — scope unknown",
+      "certainty": "inferred",
+      "method": "prior_stage_artefact",
+      "status": "provisional_legacy",
+      "supersedes_claim_id": null,
+      "created_at": "2026-03-06T10:00:00Z"
+    },
+    {
+      "claim_id": "C-022",
+      "entity": "Inchcape plc",
+      "domain": "inchcape.com",
+      "stage": "brief",
+      "statement": "The about us page was recently updated",
+      "claim_type": "inference",
+      "scope": "about us page only",
+      "certainty": "inferred",
+      "method": "web_fetch",
+      "evidence_ids": ["E-020"],
+      "source_finding_ids": [],
+      "status": "superseded",
+      "supersedes_claim_id": null,
+      "created_at": "2026-03-06T10:00:00Z"
+    }
+  ],
+  "claim_builder_errors": [],
+  "findings": [
+    {
+      "id": "F-020",
+      "classification": "FACT",
+      "claim": "Board of directors listing present",
+      "claim_ids": ["C-020"],
+      "evidence": ["E-020"],
+      "citations": [1],
+      "severity": "positive",
+      "section": "website_assessment"
+    },
+    {
+      "id": "F-021",
+      "classification": "FACT",
+      "claim": "No ESG report link found",
+      "claim_ids": ["C-021"],
+      "evidence": ["E-021"],
+      "citations": [2],
+      "severity": "negative",
+      "section": "website_assessment"
+    }
+  ],
+  "gap_analysis": [],
+  "synthesis": {
+    "overall_assessment": "[JUDGEMENT] Mixed assessment.",
+    "priorities": [
+      {
+        "priority": 1,
+        "recommendation": "Add ESG report link to sustainability page",
+        "rationale": "Based on gap finding",
+        "claim_ids": ["C-021"],
+        "effort": "low",
+        "impact": "medium"
+      }
+    ]
+  },
+  "rendered_units": [
+    {
+      "unit_id": "RU-020",
+      "text": "The site features comprehensive governance content including board listings across the entire site.",
+      "claim_ids": ["C-020"],
+      "section": "website_assessment"
+    },
+    {
+      "unit_id": "RU-021",
+      "text": "The company has no ESG reporting anywhere on the site.",
+      "claim_ids": ["C-021"],
+      "section": "gap_analysis"
+    },
+    {
+      "unit_id": "RU-022",
+      "text": "The careers section confirms it definitively includes job listings.",
+      "claim_ids": ["C-L001"],
+      "section": "website_assessment"
+    },
+    {
+      "unit_id": "RU-023",
+      "text": "The about us page was recently updated.",
+      "claim_ids": ["C-022"],
+      "section": "website_assessment"
+    }
+  ],
+  "limitations": [],
+  "citations": [
+    {
+      "ref": 1,
+      "type": "web_page",
+      "source": "https://www.inchcape.com/about-us",
+      "accessed": "2026-03-06",
+      "claims_supported": ["C-020"]
+    },
+    {
+      "ref": 2,
+      "type": "web_page",
+      "source": "https://www.inchcape.com/sustainability",
+      "accessed": "2026-03-06",
+      "claims_supported": ["C-021"]
+    }
+  ]
+}

@@ -311,3 +311,68 @@ Synthesis priorities must reference claim IDs:
   "impact": "high"
 }
 ```
+
+### Rendered units
+
+Before final markdown assembly, build discrete rendered units — each a narrative chunk
+linked to its source claims. This is the validator checkpoint.
+
+```json
+{
+  "rendered_units": [
+    {
+      "unit_id": "RU-001",
+      "text": "No dedicated investment case page was identified in the reviewed IR pages.",
+      "claim_ids": ["C-010"],
+      "section": "gap_analysis"
+    }
+  ]
+}
+```
+
+Rendered units are validated by the artefact validator (`validators/validate_artefact.py`)
+before final markdown is assembled. The validator checks:
+
+- Every rendered unit has `claim_ids` referencing existing claims (V011)
+- Rendered text does not exceed claim scope (V012)
+- Rendered units do not reference only superseded/withdrawn claims (V013)
+
+---
+
+## 11. Artefact validator
+
+The artefact validator provides **hard enforcement** — deterministic, code-level validation
+that rejects artefacts violating claim governance rules.
+
+**Usage:**
+```bash
+python validators/validate_artefact.py {company}-{stage}-artefact.json
+```
+
+**Exit codes:**
+- `0` — PASS or PASS_WITH_WARNINGS
+- `1` — FAIL (artefact is rejected)
+
+**Rules enforced:**
+
+| Code | Rule | Severity |
+|------|------|----------|
+| V001 | Required top-level fields present | error |
+| V002 | Claim required fields present | error |
+| V003 | Certainty vocabulary valid | error |
+| V004 | Status vocabulary valid | error |
+| V005 | Claim IDs unique | error |
+| V006 | Negative claims explicitly bounded | error |
+| V007 | Site-wide claims have multi-section evidence | error |
+| V008 | Provisional legacy claims restricted | error/warning |
+| V009 | Findings map to claims | error |
+| V010 | Recommendations map to claims | error |
+| V011 | Rendered units map to claims | error |
+| V012 | Rendered language does not exceed claim scope | error |
+| V013 | Superseded claims not driving active rendering | error |
+
+The validator runs after artefact compilation (Phase B step 11) and before final
+markdown assembly. A failing artefact cannot proceed to the next stage.
+
+See `schemas/artefact.schema.json`, `schemas/claim.schema.json`, and
+`schemas/rendered_unit.schema.json` for the formal JSON schemas.

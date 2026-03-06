@@ -1,0 +1,187 @@
+{
+  "stage": "brief",
+  "entity": "Rolls-Royce Holdings plc",
+  "domain": "rolls-royce.com",
+  "generated_at": "2026-03-06T10:00:00Z",
+  "scope": {
+    "focus": "investor communications",
+    "confirmed_at": "2026-03-06T09:55:00Z"
+  },
+  "capabilities_used": ["web_search", "web_fetch", "bash"],
+  "executive_summary": "Rolls-Royce has a well-structured investor relations section with clear navigation and upcoming results dates.",
+  "evidence_items": [
+    {
+      "evidence_id": "E-001",
+      "source_url": "https://www.rolls-royce.com/investors.aspx",
+      "evidence_area": "ir_landing_page",
+      "section": "investors",
+      "collection_method": "web_fetch"
+    },
+    {
+      "evidence_id": "E-002",
+      "source_url": "https://www.rolls-royce.com/investors/results-and-reports.aspx",
+      "evidence_area": "results_archive",
+      "section": "investors",
+      "collection_method": "web_fetch"
+    },
+    {
+      "evidence_id": "E-003",
+      "source_url": "https://www.rolls-royce.com/about.aspx",
+      "evidence_area": "about_section",
+      "section": "about",
+      "collection_method": "web_fetch"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "C-001",
+      "entity": "Rolls-Royce Holdings plc",
+      "domain": "rolls-royce.com",
+      "stage": "brief",
+      "statement": "The IR landing page lists three upcoming results dates",
+      "claim_type": "fact",
+      "scope": "IR landing page only",
+      "certainty": "confirmed",
+      "method": "web_fetch",
+      "evidence_ids": ["E-001"],
+      "source_finding_ids": [],
+      "status": "active",
+      "supersedes_claim_id": null,
+      "created_at": "2026-03-06T10:00:00Z"
+    },
+    {
+      "claim_id": "C-002",
+      "entity": "Rolls-Royce Holdings plc",
+      "domain": "rolls-royce.com",
+      "stage": "brief",
+      "statement": "Strategy content on the IR landing page appears to pre-date the most recent results",
+      "claim_type": "inference",
+      "scope": "IR landing page and results archive",
+      "certainty": "inferred",
+      "method": "web_fetch",
+      "evidence_ids": ["E-001", "E-002"],
+      "source_finding_ids": [],
+      "status": "active",
+      "supersedes_claim_id": null,
+      "created_at": "2026-03-06T10:00:00Z"
+    },
+    {
+      "claim_id": "C-003",
+      "entity": "Rolls-Royce Holdings plc",
+      "domain": "rolls-royce.com",
+      "stage": "brief",
+      "statement": "No dedicated investment case page was identified in the reviewed IR pages",
+      "claim_type": "gap",
+      "scope": "reviewed IR pages",
+      "certainty": "observed",
+      "method": "web_fetch",
+      "evidence_ids": ["E-001"],
+      "source_finding_ids": [],
+      "status": "active",
+      "supersedes_claim_id": null,
+      "created_at": "2026-03-06T10:00:00Z"
+    }
+  ],
+  "claim_builder_errors": [],
+  "findings": [
+    {
+      "id": "F-001",
+      "classification": "FACT",
+      "claim": "The IR landing page lists three upcoming results dates",
+      "claim_ids": ["C-001"],
+      "evidence": ["E-001"],
+      "citations": [1],
+      "severity": "positive",
+      "section": "website_assessment"
+    },
+    {
+      "id": "F-002",
+      "classification": "INFERENCE",
+      "claim": "Strategy content appears to pre-date the most recent results",
+      "claim_ids": ["C-002"],
+      "confidence": "single_source, absence_based",
+      "reasoning": "Strategy page references FY23 targets but FY24 results show upgraded targets",
+      "evidence": ["E-001", "E-002"],
+      "citations": [1, 2],
+      "severity": "medium",
+      "section": "website_assessment"
+    }
+  ],
+  "gap_analysis": [
+    {
+      "category": "IR landing page",
+      "status": "found",
+      "detail": "Present with navigation and key links",
+      "claim_ids": ["C-001"],
+      "evidence": ["E-001"],
+      "citations": [1]
+    },
+    {
+      "category": "Investment case page",
+      "status": "searched_not_found",
+      "search_method": "Navigated IR section; searched for 'investment case', 'why invest'",
+      "detail": "No dedicated investment case page was identified in the reviewed IR pages",
+      "claim_ids": ["C-003"],
+      "evidence": ["E-001"],
+      "citations": [1]
+    }
+  ],
+  "synthesis": {
+    "overall_assessment": "[JUDGEMENT] The Rolls-Royce IR section is well-structured but would benefit from a dedicated investment case page.",
+    "priorities": [
+      {
+        "priority": 1,
+        "recommendation": "Add a dedicated investment case page to the IR section",
+        "rationale": "Based on C-003 (gap in reviewed IR pages) and peer best practice",
+        "claim_ids": ["C-003"],
+        "effort": "medium",
+        "impact": "high"
+      }
+    ]
+  },
+  "rendered_units": [
+    {
+      "unit_id": "RU-001",
+      "text": "The IR landing page lists three upcoming results dates, providing clear visibility of the reporting calendar.",
+      "claim_ids": ["C-001"],
+      "section": "website_assessment"
+    },
+    {
+      "unit_id": "RU-002",
+      "text": "Strategy content on the IR landing page appears to pre-date the most recent results, suggesting the page may not have been updated following the latest reporting cycle.",
+      "claim_ids": ["C-002"],
+      "section": "website_assessment"
+    },
+    {
+      "unit_id": "RU-003",
+      "text": "No dedicated investment case page was identified in the reviewed IR pages.",
+      "claim_ids": ["C-003"],
+      "section": "gap_analysis"
+    }
+  ],
+  "limitations": [
+    "No screenshots captured (evidence_collector unavailable)"
+  ],
+  "citations": [
+    {
+      "ref": 1,
+      "type": "web_page",
+      "source": "https://www.rolls-royce.com/investors.aspx",
+      "accessed": "2026-03-06",
+      "claims_supported": ["C-001", "C-002", "C-003"]
+    },
+    {
+      "ref": 2,
+      "type": "web_page",
+      "source": "https://www.rolls-royce.com/investors/results-and-reports.aspx",
+      "accessed": "2026-03-06",
+      "claims_supported": ["C-002"]
+    }
+  ],
+  "compliance": {
+    "checks_passed": 14,
+    "checks_failed": 0,
+    "failures": [],
+    "repairs": []
+  }
+}
