@@ -178,6 +178,19 @@
       "claims_supported": ["C-002"]
     }
   ],
+  "protocol_interventions": [
+    {
+      "intervention_id": "PI-001",
+      "stage": "brief",
+      "protocol_rule": "negative_scope_bounded",
+      "action": "claim_scope_bounded",
+      "claim_id": "C-003",
+      "original_candidate": "There is no investment case page on the site",
+      "final_output": "No dedicated investment case page was identified in the reviewed IR pages",
+      "reason": "Claim scope narrowed to match evidence boundary (reviewed IR pages only)",
+      "timestamp": "2026-03-06T10:00:00Z"
+    }
+  ],
   "compliance": {
     "checks_passed": 14,
     "checks_failed": 0,
