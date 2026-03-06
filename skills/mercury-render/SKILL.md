@@ -51,6 +51,36 @@ mercury-render/
 
 ## How rendering works
 
+### Claim-backed rendering (vNext)
+
+**Critical rule:** The renderer must compose output from claims and claim-backed findings. It
+must not generate free prose first and then validate or annotate it afterwards.
+
+The rendering flow is:
+
+```
+claims[] → findings (with claim_ids) → prose sections
+```
+
+Not:
+
+```
+findings → prose → check against claims (WRONG)
+```
+
+**Scope inheritance:** When rendering a finding or gap, the output text must not exceed the
+scope of its source claim(s). If a claim says `scope: "reviewed IR pages"`, the rendered
+prose must say "in the reviewed IR pages", not "on the site".
+
+**Negative claim rendering:** Negative findings (gaps, absences) must render as bounded
+absence statements that match their source claim scope. "No dedicated investment case page
+was identified in the reviewed IR pages" — never "There is no investment case page on the
+site" unless the claim has multi-section evidence.
+
+**Provisional legacy claims:** Findings backed only by `provisional_legacy` claims must
+render with hedged language ("based on available evidence", "in the material reviewed") and
+cannot render as high-confidence or site-wide statements.
+
 ### Step 1: Identify the report type
 
 Mercury has three report types, each with a different document structure:
@@ -65,7 +95,9 @@ See `references/report-structures.md` for the full section-by-section breakdown 
 
 ### Step 2: Prepare structured data
 
-Before rendering, organise your findings into a data object. The component library expects this shape:
+Before rendering, organise your findings into a data object. The component library expects
+this shape. **vNext:** The `claims` array from the artefact must be included; findings
+reference claim IDs.
 
 ```javascript
 const reportData = {
@@ -80,12 +112,25 @@ const reportData = {
     ["Pages analysed", "10 key pages"],
   ],
 
-  // Findings (quick audit)
+  // Claims (vNext) — the authoritative bounded knowledge layer
+  claims: [
+    {
+      claim_id: "C-001",
+      statement: "The IR landing page lists three upcoming results dates",
+      claim_type: "fact",
+      scope: "IR landing page only",
+      certainty: "confirmed",
+      status: "active",
+      evidence_ids: ["E-001"]
+    }
+  ],
+
+  // Findings — must reference claim_ids
   executiveSummary: "string",
-  strengths: [{ title: "...", detail: "..." }],
-  gaps: [{ gap: "...", section: "...", priority: "High|Medium|Low", detail: "..." }],
+  strengths: [{ title: "...", detail: "...", claim_ids: ["C-001"] }],
+  gaps: [{ gap: "...", section: "...", priority: "High|Medium|Low", detail: "...", claim_ids: ["C-003"] }],
   benchmarks: { rows: [["Category", "Median", "P75", "Estimate", "Assessment"]] },
-  talkingPoints: [{ title: "...", detail: "..." }],
+  talkingPoints: [{ title: "...", detail: "...", claim_ids: ["C-001", "C-003"] }],
   pagesAnalysed: [["URL", "Page type", "Assessment"]],
 
   // Findings (peer comparison) — adds:
@@ -93,12 +138,21 @@ const reportData = {
   companyB: "GE Aerospace",
   summaryRatings: [{ dimension: "...", ratingA: "...", ratingB: "...", edge: "..." }],
   comparisonMatrix: [{ dimension: "...", a: "...", b: "...", edge: "..." }],
-  whereALeads: [{ title: "...", detail: "..." }],
-  whereBLeads: [{ title: "...", detail: "..." }],
+  whereALeads: [{ title: "...", detail: "...", claim_ids: [] }],
+  whereBLeads: [{ title: "...", detail: "...", claim_ids: [] }],
   pagesA: [["URL", "Page type"]],
   pagesB: [["URL", "Page type"]],
 };
 ```
+
+### Rendering scope guard
+
+When building prose from a finding, look up its `claim_ids` and apply this guard:
+
+1. Read the `scope` field from each referenced claim
+2. The rendered prose must not make assertions broader than the narrowest claim scope
+3. If the claim `certainty` is `inferred` or `not_assessed`, the prose must use hedged language
+4. If the claim `status` is `provisional_legacy`, the prose must use hedged language and cannot assert site-wide conclusions
 
 ### Step 3: Choose format and render
 
