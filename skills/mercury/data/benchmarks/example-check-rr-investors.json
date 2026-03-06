@@ -1,0 +1,137 @@
+{
+  "_note": "This file is an EXAMPLE of what the app generates automatically by cross-referencing the evidence pack against the benchmarks for the chosen lens. The LLM never produces this — the app does. The LLM receives this as input to the reasoning step.",
+
+  "company": "Rolls-Royce Holdings plc",
+  "lens": "investors",
+  "benchmark_tier": "enhanced",
+  "generated_at": "2026-02-14T12:30:00Z",
+
+  "archetype_checks": {
+    "ir_landing": {
+      "evidence_source": "pages/investors.json",
+      "page_id": "rr-investors",
+      "core": [
+        {"id": "ir-01", "component": "Results and reports access", "status": "present", "evidence": "Sub-page links to Results, reports & presentations, Annual Report 2024, Half Year Results 2024"},
+        {"id": "ir-02", "component": "Share price information", "status": "present", "evidence": "Share price sub-page linked; share price ticker in header"},
+        {"id": "ir-03", "component": "Financial calendar", "status": "present", "evidence": "Financial calendar sub-page linked"},
+        {"id": "ir-04", "component": "Contact for investor enquiries", "status": "present", "evidence": "Investor contacts sub-page linked; registrar Equiniti details provided"},
+        {"id": "ir-05", "component": "Regulatory news or announcements", "status": "present", "evidence": "Company announcements linked via Media section"}
+      ],
+      "enhanced": [
+        {"id": "ir-06", "component": "Latest results snapshot", "status": "not_found", "evidence": "No key financial metrics visible on IR landing page. User must click through to results page."},
+        {"id": "ir-07", "component": "Investment case or equity story", "status": "not_found", "evidence": "No investment case summary on IR landing. No 'why invest' or equity story content found."},
+        {"id": "ir-08", "component": "Upcoming events module", "status": "not_found", "evidence": "No upcoming event displayed on IR landing. Financial calendar exists as sub-page but not surfaced."},
+        {"id": "ir-09", "component": "Quick links hub", "status": "present", "evidence": "Sub-page navigation provides access to key IR sections"},
+        {"id": "ir-10", "component": "Consensus or guidance", "status": "not_found", "evidence": "Guidance in results press release only (pages/results-fy2024.json). Not on IR landing."},
+        {"id": "ir-11", "component": "Shareholder structure", "status": "not_found", "evidence": "Shareholder centre sub-page exists but no summary visible on landing"},
+        {"id": "ir-12", "component": "Debt investor information", "status": "present", "evidence": "Debt investors sub-page linked"},
+        {"id": "ir-13", "component": "Email alerts or subscription", "status": "not_found", "evidence": "Alert service mentioned on media page but not visible on IR landing"}
+      ],
+      "score": {"core": "5/5", "enhanced": "3/8", "total": "8/13"}
+    },
+
+    "results": {
+      "evidence_source": "pages/results-fy2024.json",
+      "page_id": "rr-results-fy2024",
+      "core": [
+        {"id": "rs-01", "component": "Latest results announcement", "status": "present", "evidence": "FY2024 results press release published 2025-02-27"},
+        {"id": "rs-02", "component": "Results presentation", "status": "not_checked", "evidence": "Presentation PDF not located in evidence pack. May exist but was not crawled."},
+        {"id": "rs-03", "component": "Key financial metrics", "status": "present", "evidence": "Operating profit £2.5bn, margin 13.8%, FCF £2.4bn, dividend 6.0p, guidance all present"},
+        {"id": "rs-04", "component": "Annual report download", "status": "present", "evidence": "Annual Report 2024 PDF available (4.9MB) — see documents/inventory.json doc_id rr-ar-2024"}
+      ],
+      "enhanced": [
+        {"id": "rs-05", "component": "Webcast or video replay", "status": "not_checked", "evidence": "Not assessed — half year results page mentions webcast but not confirmed in evidence"},
+        {"id": "rs-06", "component": "Historical results archive", "status": "present", "evidence": "Annual report archive page exists; FY2023 results also in evidence pack"},
+        {"id": "rs-07", "component": "Interactive data", "status": "not_checked", "evidence": "Not assessed — interactive annual report exists but data explorer not confirmed"},
+        {"id": "rs-08", "component": "Segmental breakdown", "status": "present", "evidence": "Civil Aerospace 16.6%, Defence 14.2%, Power Systems 13.1% margins in results"},
+        {"id": "rs-09", "component": "Guidance or outlook", "status": "present", "evidence": "2025 guidance £2.7-2.9bn OP and FCF. Mid-term targets upgraded to 2028."}
+      ],
+      "score": {"core": "3/4", "enhanced": "3/5", "total": "6/9"}
+    },
+
+    "strategy": {
+      "evidence_source": "pages/strategy.json",
+      "page_id": "rr-strategy",
+      "core": [
+        {"id": "st-01", "component": "Strategic framework or pillars", "status": "present", "evidence": "Four pillars: Portfolio choices, Commercial optimisation, Cost efficiency, Technology investment"},
+        {"id": "st-02", "component": "Market context", "status": "not_found", "evidence": "No market context visible on strategy page. Market discussion in annual report only."},
+        {"id": "st-03", "component": "Value creation narrative", "status": "present", "evidence": "Transformation narrative links purpose to performance. 'Create value for all stakeholders'"}
+      ],
+      "enhanced": [
+        {"id": "st-04", "component": "Measurable targets", "status": "not_found", "evidence": "Mid-term targets in results press release but not on strategy page itself"},
+        {"id": "st-05", "component": "Business model description", "status": "present", "evidence": "Business model sub-page exists at /about/our-strategy/the-rolls-royce-business-model.aspx"},
+        {"id": "st-06", "component": "KPIs", "status": "not_found", "evidence": "KPIs referenced but not displayed on strategy page. Found in annual report."},
+        {"id": "st-07", "component": "Progress update", "status": "not_found", "evidence": "Results contain progress narrative but strategy page itself is static/aspirational"},
+        {"id": "st-08", "component": "Link to investor materials", "status": "not_found", "evidence": "No cross-link from strategy page to CMD, AR, or investor presentations"}
+      ],
+      "score": {"core": "2/3", "enhanced": "1/5", "total": "3/8"}
+    },
+
+    "homepage": {
+      "evidence_source": "pages/homepage.json",
+      "page_id": "rr-homepage",
+      "core": [
+        {"id": "hp-01", "component": "Clear company descriptor", "status": "present", "evidence": "'Complex power and propulsion solutions for safety-critical applications in the air, at sea and on land'"},
+        {"id": "hp-02", "component": "Primary navigation to all major sections", "status": "present", "evidence": "8 primary nav sections, 95 links, 4 depth levels"},
+        {"id": "hp-03", "component": "Sector or market context", "status": "present", "evidence": "'In the air, at sea and on land' — three market domains identified"},
+        {"id": "hp-04", "component": "News or updates module", "status": "not_checked", "evidence": "Media section exists in nav but news module visibility on homepage not confirmed from text evidence"},
+        {"id": "hp-05", "component": "Contact or engagement route", "status": "present", "evidence": "Contact us in primary navigation"}
+      ],
+      "enhanced": [
+        {"id": "hp-06", "component": "Share price or investor quick link", "status": "present", "evidence": "Share price ticker in header"},
+        {"id": "hp-07", "component": "Purpose or strategy headline", "status": "present", "evidence": "'Delivering complex power solutions' hero messaging"},
+        {"id": "hp-08", "component": "Results or financial snapshot", "status": "not_found", "evidence": "No financial metrics visible on homepage"},
+        {"id": "hp-09", "component": "Sustainability headline", "status": "present", "evidence": "Sustainability messaging visible: 'Doing more with less'"},
+        {"id": "hp-10", "component": "Careers call to action", "status": "not_found", "evidence": "Careers in nav only — no prominent CTA on homepage"}
+      ],
+      "score": {"core": "4/5", "enhanced": "3/5", "total": "7/10"}
+    },
+
+    "leadership": {
+      "evidence_source": "pages/leadership.json",
+      "page_id": "rr-leadership",
+      "core": [
+        {"id": "ld-01", "component": "Board of directors", "status": "present", "evidence": "Board page is the default leadership landing"},
+        {"id": "ld-02", "component": "Executive team", "status": "present", "evidence": "Separate Executive Team page linked"},
+        {"id": "ld-03", "component": "Biographical detail", "status": "present", "evidence": "Board members listed with photos and bios"},
+        {"id": "ld-04", "component": "Governance structure", "status": "present", "evidence": "Corporate governance sub-section with committee structure"}
+      ],
+      "enhanced": [
+        {"id": "ld-05", "component": "Photos", "status": "present", "evidence": "Board members listed with photos"},
+        {"id": "ld-06", "component": "Board independence and tenure", "status": "not_checked", "evidence": "Not assessed — detail page content not fully extracted"},
+        {"id": "ld-07", "component": "Board diversity", "status": "not_checked", "evidence": "Not assessed from available evidence"},
+        {"id": "ld-08", "component": "Governance code compliance", "status": "not_checked", "evidence": "Not assessed — governance sub-page not fully crawled"},
+        {"id": "ld-09", "component": "Committee terms of reference", "status": "not_checked", "evidence": "Not assessed — governance sub-page not fully crawled"}
+      ],
+      "score": {"core": "4/4", "enhanced": "1/5", "total": "5/9"}
+    },
+
+    "annual_report": {
+      "evidence_source": "pages/annual-report.json",
+      "page_id": "rr-annual-report-2024",
+      "core": [
+        {"id": "ar-01", "component": "Current year PDF download", "status": "present", "evidence": "Full AR 2024 PDF available (4.9MB)"},
+        {"id": "ar-02", "component": "Clear labelling of financial year", "status": "present", "evidence": "'Annual Report 2024 — Rolls-Royce Holdings plc'"}
+      ],
+      "enhanced": [
+        {"id": "ar-03", "component": "Section downloads", "status": "present", "evidence": "Strategic report, governance, remuneration, financials, other info all as separate PDFs"},
+        {"id": "ar-04", "component": "Interactive or HTML version", "status": "present", "evidence": "Interactive Annual Report 2024 linked"},
+        {"id": "ar-05", "component": "Archive", "status": "present", "evidence": "Archive link present; FY2023 and FY2022 reports in evidence"},
+        {"id": "ar-06", "component": "ESEF / iXBRL", "status": "present", "evidence": "ESEF xHTML zip (5.3MB) available for download"}
+      ],
+      "score": {"core": "2/2", "enhanced": "4/4", "total": "6/6"}
+    }
+  },
+
+  "summary": {
+    "total_components_checked": 55,
+    "present": 32,
+    "not_found": 14,
+    "not_checked": 9,
+    "coverage_rate": "58%",
+    "core_score": "20/23 (87%)",
+    "enhanced_score": "15/32 (47%)",
+    "strongest_archetype": "annual_report (6/6 — 100%)",
+    "weakest_archetype": "strategy (3/8 — 38%)"
+  }
+}

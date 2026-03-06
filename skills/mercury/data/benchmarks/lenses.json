@@ -1,0 +1,67 @@
+{
+  "lenses": {
+    "health": {
+      "label": "Corporate website health check",
+      "description": "Broad structural assessment across all major sections. Checks completeness, not quality.",
+      "primary_archetypes": [
+        "homepage", "about", "strategy", "leadership", "ir_landing",
+        "results", "annual_report", "sustainability", "careers",
+        "products", "news", "contact"
+      ],
+      "benchmark_tier": "core",
+      "focus": "Section presence, navigation completeness, content currency, document availability"
+    },
+
+    "investors": {
+      "label": "Investor relations assessment",
+      "description": "Deep assessment of IR content, financial communications, and investor-facing experience.",
+      "primary_archetypes": [
+        "homepage", "ir_landing", "results", "annual_report", "strategy", "leadership"
+      ],
+      "secondary_archetypes": [
+        "sustainability", "news", "about"
+      ],
+      "benchmark_tier": "enhanced",
+      "focus": "IR landing page completeness, results accessibility, document availability, investment case clarity, financial calendar, shareholder information"
+    },
+
+    "esg": {
+      "label": "ESG and sustainability review",
+      "description": "Assessment of sustainability content, reporting frameworks, and ESG messaging.",
+      "primary_archetypes": [
+        "sustainability", "homepage", "about", "strategy"
+      ],
+      "secondary_archetypes": [
+        "annual_report", "news", "careers", "products"
+      ],
+      "benchmark_tier": "enhanced",
+      "focus": "Sustainability framework, targets, performance data, reporting alignment, materiality, supply chain, assurance, integration with corporate narrative"
+    },
+
+    "careers": {
+      "label": "Careers and employer brand",
+      "description": "Assessment of employer proposition, talent attraction content, and careers experience.",
+      "primary_archetypes": [
+        "careers", "homepage", "about", "leadership"
+      ],
+      "secondary_archetypes": [
+        "sustainability", "news"
+      ],
+      "benchmark_tier": "enhanced",
+      "focus": "EVP clarity, culture content, benefits, employee stories, early careers, D&I, careers platform integration"
+    },
+
+    "pre-pitch": {
+      "label": "Pre-pitch diagnostic",
+      "description": "Rapid assessment ahead of a new business conversation. Broad but shallow — identifies talking points and obvious gaps.",
+      "primary_archetypes": [
+        "homepage", "about", "strategy", "products", "ir_landing"
+      ],
+      "secondary_archetypes": [
+        "sustainability", "careers", "news", "contact"
+      ],
+      "benchmark_tier": "core",
+      "focus": "Positioning clarity, structural completeness, obvious gaps, conversation starters, competitive context"
+    }
+  }
+}

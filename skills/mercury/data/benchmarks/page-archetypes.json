@@ -1,0 +1,221 @@
+{
+  "benchmark_version": "1.0.0",
+  "system": "Mercury",
+  "scope": "Listed companies — FTSE 100 / FTSE 250 / equivalent",
+  "note": "These define expected components for each page archetype. 'Core' components are expected on any listed company site. 'Enhanced' components are expected for FTSE 100 or equivalent. The reasoner checks evidence against these and reports present/absent. It does not say 'best practice says' — it says 'expected component not found'.",
+
+  "archetypes": {
+
+    "homepage": {
+      "label": "Corporate homepage",
+      "description": "The front door. Should orient any visitor — investor, customer, jobseeker, journalist — within seconds.",
+      "core": [
+        {"id": "hp-01", "component": "Clear company descriptor", "check": "Can a first-time visitor understand what the company does within one sentence?"},
+        {"id": "hp-02", "component": "Primary navigation to all major sections", "check": "Links to About, Products/Services, Investors, Sustainability, Careers, News, Contact"},
+        {"id": "hp-03", "component": "Sector or market context", "check": "Some indication of which sectors or markets the company operates in"},
+        {"id": "hp-04", "component": "News or updates module", "check": "Recent content visible — press releases, stories, or announcements"},
+        {"id": "hp-05", "component": "Contact or engagement route", "check": "Path to contact page or direct contact visible"}
+      ],
+      "enhanced": [
+        {"id": "hp-06", "component": "Share price or investor quick link", "check": "Share price ticker, widget, or prominent IR link"},
+        {"id": "hp-07", "component": "Purpose or strategy headline", "check": "Company purpose, vision, or strategic narrative above the fold"},
+        {"id": "hp-08", "component": "Results or financial snapshot", "check": "Latest results headline or key financial metric visible"},
+        {"id": "hp-09", "component": "Sustainability headline", "check": "ESG or sustainability message visible on homepage"},
+        {"id": "hp-10", "component": "Careers call to action", "check": "Job or careers link visible beyond just navigation"}
+      ]
+    },
+
+    "about": {
+      "label": "About / at a glance",
+      "description": "The company's self-portrait. Should establish identity, scale, purpose, and structure.",
+      "core": [
+        {"id": "ab-01", "component": "Company description", "check": "What the company does, in its own words"},
+        {"id": "ab-02", "component": "Business structure", "check": "Divisions, segments, or business units identified"},
+        {"id": "ab-03", "component": "Geographic presence", "check": "Where the company operates — countries, regions, or key locations"},
+        {"id": "ab-04", "component": "Scale indicators", "check": "Revenue, employee count, customer count, or other size metrics"},
+        {"id": "ab-05", "component": "Links to deeper sections", "check": "Routes to strategy, leadership, history, or similar"}
+      ],
+      "enhanced": [
+        {"id": "ab-06", "component": "Purpose or mission statement", "check": "Explicit purpose, mission, or vision statement"},
+        {"id": "ab-07", "component": "Key financial headline", "check": "Revenue, profit, or growth metric visible"},
+        {"id": "ab-08", "component": "Brand portfolio or key products", "check": "Major brands, products, or services highlighted"},
+        {"id": "ab-09", "component": "History or heritage", "check": "Timeline, founding story, or heritage narrative"}
+      ]
+    },
+
+    "strategy": {
+      "label": "Strategy page",
+      "description": "How the company intends to create value. Should connect purpose to priorities to measurable targets.",
+      "core": [
+        {"id": "st-01", "component": "Strategic framework or pillars", "check": "Named strategic priorities, pillars, or themes"},
+        {"id": "st-02", "component": "Market context", "check": "Description of the market environment or trends driving strategy"},
+        {"id": "st-03", "component": "Value creation narrative", "check": "How the strategy creates value for stakeholders"}
+      ],
+      "enhanced": [
+        {"id": "st-04", "component": "Measurable targets", "check": "Quantified mid-term or long-term targets with timeframes"},
+        {"id": "st-05", "component": "Business model description", "check": "How the company makes money — revenue model, competitive position"},
+        {"id": "st-06", "component": "KPIs", "check": "Key performance indicators linked to strategy"},
+        {"id": "st-07", "component": "Progress update", "check": "Evidence of progress against stated strategy — not just aspirational"},
+        {"id": "st-08", "component": "Link to investor materials", "check": "Cross-reference to CMD, annual report, or investor presentation for detail"}
+      ]
+    },
+
+    "leadership": {
+      "label": "Leadership and governance",
+      "description": "Who runs the company and how it is governed. Should establish credibility and accountability.",
+      "core": [
+        {"id": "ld-01", "component": "Board of directors", "check": "Board members listed with names and roles"},
+        {"id": "ld-02", "component": "Executive team", "check": "Senior management listed — CEO, CFO, and direct reports"},
+        {"id": "ld-03", "component": "Biographical detail", "check": "Background, experience, or career summary for each person"},
+        {"id": "ld-04", "component": "Governance structure", "check": "Board committees identified — audit, remuneration, nomination at minimum"}
+      ],
+      "enhanced": [
+        {"id": "ld-05", "component": "Photos", "check": "Professional photographs of board and executive team"},
+        {"id": "ld-06", "component": "Board independence and tenure", "check": "Independence status, appointment dates, or tenure indicated"},
+        {"id": "ld-07", "component": "Board diversity", "check": "Gender, ethnic, or skills diversity data visible"},
+        {"id": "ld-08", "component": "Governance code compliance", "check": "Reference to UK Corporate Governance Code or equivalent"},
+        {"id": "ld-09", "component": "Committee terms of reference", "check": "Committee remits or links to terms of reference documents"}
+      ]
+    },
+
+    "ir_landing": {
+      "label": "Investor relations landing page",
+      "description": "The investor's front door. Should provide immediate orientation and fast access to the most-needed content.",
+      "core": [
+        {"id": "ir-01", "component": "Results and reports access", "check": "Link to latest results, annual report, and presentations"},
+        {"id": "ir-02", "component": "Share price information", "check": "Share price display, chart, or link to share price page"},
+        {"id": "ir-03", "component": "Financial calendar", "check": "Upcoming dates — results, AGM, ex-dividend"},
+        {"id": "ir-04", "component": "Contact for investor enquiries", "check": "IR team contact or registrar details"},
+        {"id": "ir-05", "component": "Regulatory news or announcements", "check": "RNS feed, company announcements, or regulatory disclosure link"}
+      ],
+      "enhanced": [
+        {"id": "ir-06", "component": "Latest results snapshot", "check": "Key financial metrics from most recent results visible without clicking through"},
+        {"id": "ir-07", "component": "Investment case or equity story", "check": "Summary of why to invest — positioning, competitive advantages, growth drivers"},
+        {"id": "ir-08", "component": "Upcoming events module", "check": "Next reporting date, AGM, or investor event prominently displayed"},
+        {"id": "ir-09", "component": "Quick links hub", "check": "Fast access to results, reports, governance, shareholder info, contact"},
+        {"id": "ir-10", "component": "Consensus or guidance", "check": "Company guidance visible or link to consensus data"},
+        {"id": "ir-11", "component": "Shareholder structure", "check": "Major shareholders, free float, or share capital information"},
+        {"id": "ir-12", "component": "Debt investor information", "check": "Credit ratings, bond information, or debt investor section"},
+        {"id": "ir-13", "component": "Email alerts or subscription", "check": "Sign-up for IR alerts, results notifications, or news alerts"}
+      ]
+    },
+
+    "results": {
+      "label": "Results and financial reporting",
+      "description": "Where investors find performance data. Should provide immediate access to the latest numbers and historical context.",
+      "core": [
+        {"id": "rs-01", "component": "Latest results announcement", "check": "Most recent results press release or RNS accessible"},
+        {"id": "rs-02", "component": "Results presentation", "check": "Analyst presentation or slides for latest results"},
+        {"id": "rs-03", "component": "Key financial metrics", "check": "Revenue, profit, EPS, dividend, and cash flow visible or in linked document"},
+        {"id": "rs-04", "component": "Annual report download", "check": "Current year annual report available as PDF"}
+      ],
+      "enhanced": [
+        {"id": "rs-05", "component": "Webcast or video replay", "check": "Results presentation webcast or replay available"},
+        {"id": "rs-06", "component": "Historical results archive", "check": "Prior year results accessible — at least 3 years"},
+        {"id": "rs-07", "component": "Interactive data", "check": "Charts, data explorer, or interactive financial data tool"},
+        {"id": "rs-08", "component": "Segmental breakdown", "check": "Performance by division, segment, or geography"},
+        {"id": "rs-09", "component": "Guidance or outlook", "check": "Forward-looking guidance for next period visible"}
+      ]
+    },
+
+    "annual_report": {
+      "label": "Annual report landing page",
+      "description": "Access point for the company's primary disclosure document.",
+      "core": [
+        {"id": "ar-01", "component": "Current year PDF download", "check": "Full annual report downloadable as PDF"},
+        {"id": "ar-02", "component": "Clear labelling of financial year", "check": "Which financial year the report covers is unambiguous"}
+      ],
+      "enhanced": [
+        {"id": "ar-03", "component": "Section downloads", "check": "Individual sections available — strategic report, governance, financials separately"},
+        {"id": "ar-04", "component": "Interactive or HTML version", "check": "Online interactive version of the annual report"},
+        {"id": "ar-05", "component": "Archive", "check": "Prior years' annual reports accessible"},
+        {"id": "ar-06", "component": "ESEF / iXBRL", "check": "ESEF-tagged version available (regulatory requirement for EU/UK listed)"}
+      ]
+    },
+
+    "sustainability": {
+      "label": "Sustainability / ESG",
+      "description": "The company's environmental, social, and governance narrative. Should demonstrate commitment with evidence, not just aspiration.",
+      "core": [
+        {"id": "su-01", "component": "Environmental commitment", "check": "Climate, emissions, or environmental impact addressed"},
+        {"id": "su-02", "component": "Social responsibility", "check": "People, communities, health and safety, or human rights addressed"},
+        {"id": "su-03", "component": "Governance and ethics", "check": "Business ethics, compliance, or governance standards addressed"},
+        {"id": "su-04", "component": "Targets or commitments", "check": "Quantified sustainability targets — net zero date, emissions targets, or similar"}
+      ],
+      "enhanced": [
+        {"id": "su-05", "component": "Standalone sustainability report", "check": "Downloadable sustainability or ESG report separate from annual report"},
+        {"id": "su-06", "component": "Reporting framework alignment", "check": "Reference to TCFD, GRI, SASB, UN SDGs, or equivalent frameworks"},
+        {"id": "su-07", "component": "Performance data", "check": "Quantified sustainability metrics — emissions data, safety rates, diversity stats"},
+        {"id": "su-08", "component": "Materiality assessment", "check": "Materiality matrix or description of material ESG topics"},
+        {"id": "su-09", "component": "Supply chain responsibility", "check": "Supplier standards, modern slavery, or supply chain sustainability addressed"},
+        {"id": "su-10", "component": "Assurance statement", "check": "Third-party assurance or verification of sustainability data"}
+      ]
+    },
+
+    "careers": {
+      "label": "Careers and employer brand",
+      "description": "The employer's front door. Should attract talent with a clear proposition, not just list vacancies.",
+      "core": [
+        {"id": "ca-01", "component": "Job search or vacancies access", "check": "Route to current job listings — on-site search or link to careers platform"},
+        {"id": "ca-02", "component": "Company as employer narrative", "check": "Some content about what it's like to work here — beyond just 'join us'"}
+      ],
+      "enhanced": [
+        {"id": "ca-03", "component": "Employer value proposition", "check": "Explicit EVP — what the company offers employees beyond salary"},
+        {"id": "ca-04", "component": "Culture and values", "check": "Company culture, behaviours, or working environment described"},
+        {"id": "ca-05", "component": "Benefits overview", "check": "Key benefits, development opportunities, or perks listed"},
+        {"id": "ca-06", "component": "Employee stories or testimonials", "check": "Real employee voices — profiles, quotes, videos, or day-in-the-life content"},
+        {"id": "ca-07", "component": "Early careers and graduates", "check": "Apprenticeship, internship, or graduate programme content"},
+        {"id": "ca-08", "component": "Diversity and inclusion", "check": "D&I commitment, employee networks, or inclusion narrative"},
+        {"id": "ca-09", "component": "Locations", "check": "Where the company has offices or sites — relevant for candidates"}
+      ]
+    },
+
+    "products": {
+      "label": "Products and services",
+      "description": "What the company sells. Should make the offer clear to customers, prospects, and investors alike.",
+      "core": [
+        {"id": "pr-01", "component": "Product or service catalogue", "check": "Products or services listed and described"},
+        {"id": "pr-02", "component": "Organisation by segment or category", "check": "Products organised logically — by division, market, customer type, or use case"},
+        {"id": "pr-03", "component": "Individual product detail", "check": "At least some products have their own detail pages"}
+      ],
+      "enhanced": [
+        {"id": "pr-04", "component": "Customer segments or use cases", "check": "Products contextualised by who uses them or what problem they solve"},
+        {"id": "pr-05", "component": "Case studies or proof points", "check": "Evidence of products in use — customer examples, deployments, or outcomes"},
+        {"id": "pr-06", "component": "Technical specifications", "check": "Performance data, specifications, or technical detail for key products"},
+        {"id": "pr-07", "component": "Service and support", "check": "Aftermarket, support, or service offerings described"},
+        {"id": "pr-08", "component": "Innovation or R&D link", "check": "Connection to future products, R&D pipeline, or technology roadmap"}
+      ]
+    },
+
+    "news": {
+      "label": "News and media centre",
+      "description": "The corporate newsroom. Should serve journalists, analysts, and anyone tracking the company.",
+      "core": [
+        {"id": "nw-01", "component": "Press releases", "check": "Corporate press releases accessible — current and archived"},
+        {"id": "nw-02", "component": "Regulatory announcements", "check": "RNS or regulatory news feed for listed companies"},
+        {"id": "nw-03", "component": "Media contact", "check": "Press office contact details"}
+      ],
+      "enhanced": [
+        {"id": "nw-04", "component": "Content categorisation", "check": "News organised by type — corporate, trade, stories, regulatory"},
+        {"id": "nw-05", "component": "Alert or subscription service", "check": "Email alerts, RSS, or news subscription option"},
+        {"id": "nw-06", "component": "Media assets", "check": "Image library, brand assets, logos, or media kit"},
+        {"id": "nw-07", "component": "Feature content", "check": "Stories, thought leadership, or editorial content beyond press releases"},
+        {"id": "nw-08", "component": "Social media links", "check": "Links to corporate social media channels"}
+      ]
+    },
+
+    "contact": {
+      "label": "Contact page",
+      "description": "The universal fallback. Should route any enquiry to the right place efficiently.",
+      "core": [
+        {"id": "ct-01", "component": "General enquiry route", "check": "Phone number, email, or contact form for general enquiries"},
+        {"id": "ct-02", "component": "Registered office address", "check": "Company registered address visible (regulatory requirement for listed companies)"}
+      ],
+      "enhanced": [
+        {"id": "ct-03", "component": "Segmented contacts", "check": "Different contact routes for different enquiry types — investors, media, customers, careers"},
+        {"id": "ct-04", "component": "Office locations", "check": "Key office or site addresses listed"},
+        {"id": "ct-05", "component": "Whistleblowing or speak-up", "check": "Ethics line, whistleblowing contact, or speak-up mechanism"}
+      ]
+    }
+  }
+}
