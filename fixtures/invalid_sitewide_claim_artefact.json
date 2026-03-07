@@ -124,5 +124,38 @@
       "accessed": "2026-03-06",
       "claims_supported": ["C-010"]
     }
+  ],
+  "protocol_interventions": [
+    {
+      "intervention_id": "PI-001",
+      "stage": "brief",
+      "protocol_rule": "unsupported_site_wide_claim",
+      "action": "claim_rejected",
+      "original_candidate": "There is no investment case page on the site",
+      "reason": "Single-section evidence does not justify site-wide absence claim. Evidence covers only IR landing page (1 section). Requires 2+ distinct sections.",
+      "evidence_ids": ["E-010"],
+      "timestamp": "2026-03-06T10:00:00Z"
+    },
+    {
+      "intervention_id": "PI-002",
+      "stage": "brief",
+      "protocol_rule": "unsupported_site_wide_claim",
+      "action": "claim_rejected",
+      "original_candidate": "The company does not have any ESG reporting",
+      "reason": "Site-wide absence claim based on single IR landing page evidence. Scope 'company' is universal.",
+      "evidence_ids": ["E-010"],
+      "timestamp": "2026-03-06T10:01:00Z"
+    },
+    {
+      "intervention_id": "PI-003",
+      "stage": "render",
+      "protocol_rule": "render_scope_bounded",
+      "action": "render_scope_bounded",
+      "claim_id": "C-010",
+      "original_candidate": "There is no investment case page anywhere on the site.",
+      "final_output": "No dedicated investment case page was identified in the reviewed IR pages.",
+      "reason": "Rendered text inflated bounded claim scope to site-wide language",
+      "timestamp": "2026-03-06T10:05:00Z"
+    }
   ]
 }

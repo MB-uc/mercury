@@ -376,3 +376,86 @@ markdown assembly. A failing artefact cannot proceed to the next stage.
 
 See `schemas/artefact.schema.json`, `schemas/claim.schema.json`, and
 `schemas/rendered_unit.schema.json` for the formal JSON schemas.
+
+---
+
+## 12. Protocol intervention log
+
+The artefact gains an optional `"protocol_interventions": []` array that records
+when Mercury governance protocols intervene — rejecting, bounding, weakening, or
+restricting candidate reasoning.
+
+This is **purely diagnostic**. It does not affect reasoning logic, introduce new
+rules, or create any bypass capability.
+
+### Intervention object schema
+
+```json
+{
+  "intervention_id": "PI-001",
+  "stage": "brief",
+  "protocol_rule": "unsupported_site_wide_claim",
+  "action": "claim_rejected",
+  "original_candidate": "There is no investment case page on the site",
+  "reason": "Single-section evidence does not justify site-wide absence claim",
+  "evidence_ids": ["E-010"],
+  "timestamp": "2026-03-06T14:10:00Z"
+}
+```
+
+### Required fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `intervention_id` | string | Stable identifier, format `PI-NNN` |
+| `stage` | enum | `brief` / `compete` / `sitemap` / `meeting` / `render` |
+| `protocol_rule` | enum | The governance rule that fired |
+| `action` | enum | What the protocol did |
+| `reason` | string | Human-readable explanation |
+| `timestamp` | string | ISO 8601 timestamp |
+
+### Optional fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `claim_id` | string | The claim affected |
+| `original_candidate` | string | Text before intervention |
+| `final_output` | string | Text after intervention |
+| `evidence_ids` | array | Relevant evidence IDs |
+
+### Protocol rules
+
+| Rule | When it fires |
+|------|---------------|
+| `unsupported_site_wide_claim` | Site-wide claim rejected for insufficient evidence |
+| `invalid_certainty` | Certainty value not in allowed set |
+| `insufficient_evidence` | Claim lacks required evidence linkage |
+| `negative_scope_bounded` | Negative claim scope narrowed to match evidence |
+| `certainty_downgraded` | Certainty weakened to match evidence strength |
+| `render_scope_bounded` | Rendered text narrowed to stay within claim scope |
+| `certainty_language_adjusted` | Rendering language weakened to match certainty |
+| `validator_rule_failure` | Artefact validator flagged a violation |
+| `provisional_legacy_restricted` | Legacy claim restricted from high-trust operations |
+
+### Actions
+
+| Action | Meaning |
+|--------|---------|
+| `claim_rejected` | Claim was not added to `claims[]` |
+| `claim_scope_bounded` | Claim scope was narrowed |
+| `certainty_downgraded` | Certainty was reduced |
+| `render_scope_bounded` | Rendered text scope was narrowed |
+| `render_language_weakened` | Rendering language was made less categorical |
+| `legacy_claim_restricted` | Legacy claim blocked from supporting a recommendation |
+| `artefact_validation_failed` | Validator flagged a structural violation |
+
+### Validator rule V014
+
+When `protocol_interventions` is present, the artefact validator checks:
+- Each entry has all required fields
+- Intervention IDs are unique
+- `protocol_rule` and `action` use recognised vocabulary (warning if not)
+
+The field is optional. Artefacts without it remain valid.
+
+See `schemas/intervention.schema.json` for the formal JSON schema.

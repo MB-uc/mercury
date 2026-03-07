@@ -185,6 +185,11 @@
         }
       }
     },
+    "protocol_interventions": {
+      "type": "array",
+      "items": { "$ref": "intervention.schema.json" },
+      "description": "Diagnostic log of governance protocol interventions. Optional — artefacts without this field remain valid."
+    },
     "compliance": {
       "type": "object",
       "properties": {

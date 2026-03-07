@@ -378,6 +378,66 @@ def v013_superseded_rendered(v: "ArtefactValidator") -> None:
                    f"Ensure active claims govern the rendering.")
 
 
+# ── V014: Protocol interventions structural check ────────────────
+
+_ALLOWED_INTERVENTION_RULES = {
+    "unsupported_site_wide_claim", "invalid_certainty", "insufficient_evidence",
+    "negative_scope_bounded", "certainty_downgraded", "render_scope_bounded",
+    "certainty_language_adjusted", "validator_rule_failure",
+    "provisional_legacy_restricted",
+}
+
+_ALLOWED_INTERVENTION_ACTIONS = {
+    "claim_rejected", "claim_scope_bounded", "certainty_downgraded",
+    "render_scope_bounded", "render_language_weakened",
+    "legacy_claim_restricted", "artefact_validation_failed",
+}
+
+_REQUIRED_INTERVENTION_FIELDS = [
+    "intervention_id", "stage", "protocol_rule", "action", "reason", "timestamp",
+]
+
+
+def v014_intervention_log(v: "ArtefactValidator") -> None:
+    interventions = v.artefact.get("protocol_interventions")
+    if interventions is None:
+        return  # Field is optional — absence is valid
+
+    if not isinstance(interventions, list):
+        v.error("V014_INVALID_INTERVENTION_LOG", "(root)",
+                "protocol_interventions must be an array")
+        return
+
+    seen_ids: dict[str, int] = {}
+    for i, entry in enumerate(interventions):
+        pid = entry.get("intervention_id", f"protocol_interventions[{i}]")
+
+        # Required fields
+        for field in _REQUIRED_INTERVENTION_FIELDS:
+            if field not in entry or entry[field] is None or entry[field] == "":
+                v.error("V014_INVALID_INTERVENTION_ENTRY", f"protocol_interventions[{i}]",
+                        f"Intervention {pid} is missing required field '{field}'")
+
+        # Unique IDs
+        if pid in seen_ids:
+            v.error("V014_DUPLICATE_INTERVENTION_ID", f"protocol_interventions[{i}]",
+                    f"Duplicate intervention_id '{pid}' (first at [{seen_ids[pid]}])")
+        else:
+            seen_ids[pid] = i
+
+        # Protocol rule vocabulary
+        rule = entry.get("protocol_rule", "")
+        if rule and rule not in _ALLOWED_INTERVENTION_RULES:
+            v.warn("V014_UNKNOWN_PROTOCOL_RULE", f"protocol_interventions[{i}]",
+                   f"Intervention {pid} has unrecognised protocol_rule '{rule}'")
+
+        # Action vocabulary
+        action = entry.get("action", "")
+        if action and action not in _ALLOWED_INTERVENTION_ACTIONS:
+            v.warn("V014_UNKNOWN_ACTION", f"protocol_interventions[{i}]",
+                   f"Intervention {pid} has unrecognised action '{action}'")
+
+
 # ── Rule registry ──────────────────────────────────────────────────
 
 ALL_RULES = [
@@ -394,4 +454,5 @@ ALL_RULES = [
     v011_rendered_unit_claims,
     v012_render_scope_exceeded,
     v013_superseded_rendered,
+    v014_intervention_log,
 ]
