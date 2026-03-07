@@ -1,0 +1,26 @@
+{
+  "name": "idx-tools",
+  "owner": {
+    "name": "IDX",
+    "email": "info@idx.inc"
+  },
+  "metadata": {
+    "description": "IDX consulting tools for corporate website assessment, competitor analysis, and client engagement preparation",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "mercury",
+      "source": ".",
+      "description": "Mercury v3 — prepares IDX consultants for client engagements with brief, compete, sitemap, meeting, and all commands. Includes claim-ledger governance, artefact validator, protocol intervention logging, and branded document rendering.",
+      "version": "3.0.0",
+      "author": {
+        "name": "IDX"
+      },
+      "homepage": "https://github.com/MB-uc/mercury",
+      "repository": "https://github.com/MB-uc/mercury",
+      "category": "consulting",
+      "tags": ["website-audit", "investor-relations", "corporate-website", "consulting", "governance"]
+    }
+  ]
+}
