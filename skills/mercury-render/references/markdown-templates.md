@@ -13,6 +13,27 @@ Templates for producing Mercury reports in markdown format. Use the same section
 - No cover page — start directly with the title as H1
 - Include a metadata block immediately after the title
 
+## Claim-backed prose rules (vNext)
+
+When filling in template placeholders, apply these rules:
+
+1. **Scope guard** — Before writing any finding, gap, or talking point, look up the
+   `claim_ids` for that item and read each claim's `scope` field. The prose must not
+   exceed that scope. Use the claim's scope phrase directly in the text.
+
+2. **Negative phrasing** — For gaps (status: `searched_not_found`), write:
+   "No {item} was identified in {claim.scope}" — never "There is no {item} on the site".
+
+3. **Certainty mapping** —
+   - `confirmed` → direct assertion ("The IR page includes...")
+   - `observed` → observed assertion ("The IR page was observed to include...")
+   - `inferred` → hedged assertion ("The IR page appears to include...")
+   - `not_assessed` → explicit exclusion ("This area was not assessed")
+
+4. **Provisional legacy** — If a finding's claims all have `status: "provisional_legacy"`,
+   prefix the finding detail with "Based on available evidence, " and do not use site-wide
+   language.
+
 ---
 
 ## Quick audit template

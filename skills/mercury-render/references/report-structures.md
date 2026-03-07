@@ -2,6 +2,30 @@
 
 Section order and content guidance for each Mercury report type.
 
+## Claim-backed rendering rules (vNext)
+
+All report types must follow these rules when generating prose from structured data:
+
+1. **Scope inheritance** — Every finding, gap, or talking point references `claim_ids`. The
+   rendered prose must not exceed the scope of its source claims. If a claim is scoped to
+   "reviewed IR pages", the prose says "in the reviewed IR pages", never "on the site".
+
+2. **Negative statement rendering** — Gaps and absences render as bounded statements:
+   - Allowed: "No dedicated investment case page was identified in the reviewed IR pages"
+   - Rejected: "There is no investment case page on the site"
+   The scope boundary comes from the claim, not from editorial judgement.
+
+3. **Certainty-appropriate language** — Claims with `certainty: "inferred"` render with
+   hedging ("appears to", "suggests", "based on available evidence"). Claims with
+   `certainty: "confirmed"` can use direct assertions.
+
+4. **Provisional legacy claims** — If the source artefact lacked native claims and claims
+   were derived via the legacy shim (`status: "provisional_legacy"`), the prose must use
+   hedged language throughout and cannot make site-wide or high-confidence assertions.
+
+5. **No free prose** — The renderer builds output from claims and claim-backed findings.
+   It does not generate prose and then check it against claims afterwards.
+
 ## Quick audit
 
 A focused assessment of a single company's website. Typically 5-6 pages.

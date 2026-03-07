@@ -19,6 +19,7 @@ replicated with generic research tools. Four stages run in sequence — each pro
 markdown report. An integrated Word document is offered at the end.
 
 **Reference files** (in `references/` alongside this file):
+- `CLAIM_SCHEMA.md` — Claim schema, claim builder rules, and construction-time enforcement spec (vNext)
 - `PLAYBOOK_REFERENCE.md` — IDX Corporate Website Playbook evaluation criteria
 - `IQ_CRITERIA.md` — Connect.IQ benchmark methodology and company dataset
 - `DOCUMENT_CHECKLIST.md` — 130-item document type inventory
@@ -86,11 +87,14 @@ raw material.
 
 ### Phase B: Reasoning (no tool calls)
 
-6. **Analysis** — reason over collected evidence only
-7. **Claim classification** — tag every substantive claim (re-read rules before each section)
-8. **Artefact compilation** — save `{company}-{stage}-artefact.json`
-9. **Markdown rendering** — generate report from artefact (not freehand)
-10. **Compliance self-check** — run checks A–I (Stage 1) or A–H (Stages 2–4); repair failures
+6. **Claim construction** — build atomic claims from evidence using the claim builder (see `references/CLAIM_SCHEMA.md`). Every claim must pass construction-time validation: required fields, scope boundary, certainty vocabulary, evidence linkage. **Unsupported site-wide claims and unbounded negative claims are rejected here — they never enter the artefact.** Rejected claims are recorded in `claim_builder_errors[]`.
+7. **Analysis** — reason over collected evidence and validated claims only
+8. **Claim classification** — tag every substantive claim (re-read rules before each section)
+9. **Artefact compilation** — save `{company}-{stage}-artefact.json` with `claims[]`, `claim_builder_errors[]`, claim-linked `findings[]`, and `rendered_units[]`
+10. **Rendered unit construction** — before assembling final markdown, build discrete `rendered_units[]` — each a narrative chunk with `unit_id`, `text`, and `claim_ids`. This is the validator checkpoint.
+11. **Artefact validation** — run `python validators/validate_artefact.py {artefact}.json`. If the validator returns FAIL, the artefact is rejected. Fix the errors and re-run. The validator checks claim structure, scope discipline, traceability, and rendered language against claim boundaries. This is **hard enforcement** — a failing artefact cannot proceed to the next stage.
+12. **Markdown rendering** — assemble final report from validated rendered units (not freehand prose)
+13. **Compliance self-check** — run checks A–N (Stage 1) or A–H, J–N (Stages 2–4); repair failures
 
 During reasoning, do not make additional tool calls. If you discover a gap in evidence, record
 it in the limitations section — do not attempt to fill it. This boundary is critical. Violations
@@ -259,6 +263,23 @@ explicit framing, but never as `[FACT]` and never in situational context.
 - Gaps are findings — missing information has the same weight as present information
 - Absence is visible — stated explicitly with the search method used
 
+### Claim builder enforcement (vNext)
+
+Claims are the bounded knowledge layer between evidence and findings. The claim builder
+runs in Phase B step 6, before any findings are generated.
+
+**Hard rules — violations cause rejection, not warnings:**
+
+1. **Required fields** — every claim must have `scope`, `certainty`, and `evidence_ids` (unless method is `prior_stage_artefact`)
+2. **Site-wide claims** — rejected unless supported by evidence from ≥2 distinct site sections. Trigger phrases: "the site", "anywhere on the site", "there is no", "does not have", "nowhere on", "across the site", "site-wide"
+3. **Negative claims** — must use bounded language matching actual assessment scope. "No investment case page in the reviewed IR pages" is allowed. "There is no investment case page on the site" is rejected.
+4. **searched_not_found** — derived claims must use certainty `observed` or `inferred` (never `confirmed`) and scope must name what was actually searched
+5. **Certainty vocabulary** — only `confirmed`, `observed`, `inferred`, `not_assessed`
+
+Rejected claims are logged in `claim_builder_errors[]` with reason and suggested revision.
+
+See `references/CLAIM_SCHEMA.md` for the full schema, builder sequence, and error format.
+
 ---
 
 ## Compliance self-check
@@ -276,9 +297,18 @@ Run this at the end of every stage, before saving. It is a structured pass — n
 | G: Citation completeness | No orphaned citations or facts | Resolve |
 | H: Prohibited content | No share prices, analyst opinions, etc. | Remove |
 | I: Own news section fetched | *(Stage 1 only)* Company's news/stories/media section was fetched directly in Step 3b — not only searched via web_search | Fetch now; review most recent 10–15 articles; add any missed material events to situational awareness before saving |
+| J: Claim mapping | Every finding has `claim_ids` referencing ≥1 active claim | Add claim linkage or remove finding |
+| K: Negative scope integrity | Every negative statement in rendered output inherits its source claim's `scope` — no scope inflation from claim to prose | Narrow the rendered statement to match claim scope |
+| L: Recommendation traceability | Every synthesis priority has `claim_ids` referencing ≥1 active claim | Add claim linkage or remove recommendation |
+| M: Site-wide claim threshold | No claim with site-wide language unless backed by ≥2 distinct evidence sections (enforced at construction, verified here as backstop) | Reject claim or narrow scope |
+| N: Certainty vocabulary | Every claim uses only allowed certainty values: `confirmed`, `observed`, `inferred`, `not_assessed` | Fix or reject |
 
 Append the self-check result to the JSON artefact as a `compliance` object. If any check fails,
 attempt a targeted repair. If repair fails, note in the limitations section.
+
+**vNext priority:** Checks J–N should be enforced at claim construction time (Phase B step 6)
+where possible, with the compliance self-check serving as a backstop. Earlier enforcement is
+always preferred over later repair.
 
 ---
 
@@ -340,6 +370,10 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
 Saved as `{company}-{stage}-artefact.json` at the end of the reasoning phase. The `findings`
 shape varies by stage — all other fields are fixed.
 
+**vNext change:** Artefacts now include `claims[]` and `claim_builder_errors[]` as top-level
+arrays. Claims are built before findings. Findings, gap analysis, and synthesis must reference
+claim IDs. See `references/CLAIM_SCHEMA.md` for the full claim schema.
+
 ```json
 {
   "company": "Company Name plc",
@@ -352,11 +386,74 @@ shape varies by stage — all other fields are fixed.
   },
   "capabilities_used": ["web_search", "web_fetch", "bash"],
   "executive_summary": "Plain language summary — no classification tags here.",
+  "claims": [
+    {
+      "claim_id": "C-001",
+      "entity": "Company Name plc",
+      "domain": "company.com",
+      "stage": "brief",
+      "statement": "The IR landing page lists three upcoming results dates",
+      "claim_type": "fact",
+      "scope": "IR landing page only",
+      "certainty": "confirmed",
+      "method": "web_fetch",
+      "evidence_ids": ["E-001"],
+      "source_finding_ids": [],
+      "status": "active",
+      "supersedes_claim_id": null,
+      "created_at": "2026-02-26T14:45:00Z"
+    },
+    {
+      "claim_id": "C-002",
+      "entity": "Company Name plc",
+      "domain": "company.com",
+      "stage": "brief",
+      "statement": "Strategy content on the IR landing page appears to pre-date the most recent results",
+      "claim_type": "inference",
+      "scope": "IR landing page and results archive",
+      "certainty": "inferred",
+      "method": "web_fetch",
+      "evidence_ids": ["E-001", "E-003"],
+      "source_finding_ids": [],
+      "status": "active",
+      "supersedes_claim_id": null,
+      "created_at": "2026-02-26T14:45:00Z"
+    },
+    {
+      "claim_id": "C-003",
+      "entity": "Company Name plc",
+      "domain": "company.com",
+      "stage": "brief",
+      "statement": "No dedicated investment case page was identified in the reviewed IR pages",
+      "claim_type": "gap",
+      "scope": "reviewed IR pages",
+      "certainty": "observed",
+      "method": "web_fetch",
+      "evidence_ids": ["E-001"],
+      "source_finding_ids": [],
+      "status": "active",
+      "supersedes_claim_id": null,
+      "created_at": "2026-02-26T14:45:00Z"
+    }
+  ],
+  "claim_builder_errors": [
+    {
+      "error_id": "CBE-001",
+      "candidate_statement": "There is no investment case page on the site",
+      "candidate_scope": "company.com",
+      "rejection_reason": "unsupported_site_wide_claim",
+      "evidence_ids": ["E-001"],
+      "detail": "Claim uses site-wide language but evidence covers only reviewed IR pages (1 section). Requires ≥2 distinct sections.",
+      "suggested_revision": "No dedicated investment case page was identified in the reviewed IR pages",
+      "suggested_scope": "reviewed IR pages"
+    }
+  ],
   "findings": [
     {
       "id": "F-001",
       "classification": "FACT",
       "claim": "The IR landing page lists three upcoming results dates",
+      "claim_ids": ["C-001"],
       "evidence": ["E-001"],
       "citations": [1],
       "severity": "positive",
@@ -366,6 +463,7 @@ shape varies by stage — all other fields are fixed.
       "id": "F-002",
       "classification": "INFERENCE",
       "claim": "Strategy content appears to pre-date the most recent results",
+      "claim_ids": ["C-002"],
       "confidence": "single_source, absence_based",
       "reasoning": "Strategy page references FY23 targets but FY24 results show upgraded targets",
       "evidence": ["E-001", "E-003"],
@@ -377,6 +475,7 @@ shape varies by stage — all other fields are fixed.
       "id": "F-003",
       "classification": "JUDGEMENT",
       "claim": "The IR section would benefit from a dedicated results snapshot on the landing page",
+      "claim_ids": ["C-001", "C-002"],
       "evidence_basis": ["F-001", "F-002"],
       "severity": "medium",
       "section": "synthesis"
@@ -387,6 +486,7 @@ shape varies by stage — all other fields are fixed.
       "category": "IR landing page",
       "status": "found",
       "detail": "Present with navigation and key links",
+      "claim_ids": ["C-001"],
       "evidence": ["E-001"],
       "citations": [1]
     },
@@ -394,8 +494,9 @@ shape varies by stage — all other fields are fixed.
       "category": "Investment case page",
       "status": "searched_not_found",
       "search_method": "Navigated IR section; searched site for 'investment case', 'why invest'",
-      "evidence": [],
-      "citations": []
+      "claim_ids": ["C-003"],
+      "evidence": ["E-001"],
+      "citations": [1]
     }
   ],
   "synthesis": {
@@ -403,13 +504,28 @@ shape varies by stage — all other fields are fixed.
     "priorities": [
       {
         "priority": 1,
-        "recommendation": "What to do",
-        "rationale": "Why — referencing F-001, F-002",
+        "recommendation": "Add a dedicated investment case page",
+        "rationale": "Based on C-003 (gap) and C-002 (outdated strategy content)",
+        "claim_ids": ["C-003", "C-002"],
         "effort": "medium",
         "impact": "high"
       }
     ]
   },
+  "rendered_units": [
+    {
+      "unit_id": "RU-001",
+      "text": "The IR landing page lists three upcoming results dates, providing clear visibility of the reporting calendar.",
+      "claim_ids": ["C-001"],
+      "section": "website_assessment"
+    },
+    {
+      "unit_id": "RU-002",
+      "text": "No dedicated investment case page was identified in the reviewed IR pages.",
+      "claim_ids": ["C-003"],
+      "section": "gap_analysis"
+    }
+  ],
   "limitations": [
     "No screenshots captured (evidence_collector unavailable)",
     "Situational context limited to web_search snippets"
@@ -420,11 +536,11 @@ shape varies by stage — all other fields are fixed.
       "type": "web_page",
       "source": "https://www.company.com/investors",
       "accessed": "2026-02-26",
-      "claims_supported": ["F-001", "F-002"]
+      "claims_supported": ["C-001", "C-002", "C-003", "F-001", "F-002"]
     }
   ],
   "compliance": {
-    "checks_passed": 8,
+    "checks_passed": 13,
     "checks_failed": 0,
     "failures": [],
     "repairs": []
@@ -844,19 +960,33 @@ Stage 4 is pure synthesis. It has no collection phase — it reads from prior ar
 **Step 1 — Check artefacts:** Look for prior stage JSON files. Stage 1 must exist. Stages 2
 and 3 are optional. Adjust agenda for available content.
 
+**Step 1b — Load claims (vNext):** Extract `claims[]` from each available artefact. Claims
+are the primary bounded knowledge layer for synthesis. If an artefact lacks `claims[]` (legacy),
+apply the legacy compatibility shim: derive provisional claims with `status: "provisional_legacy"`
+and restricted rendering power (see `references/CLAIM_SCHEMA.md` §8).
+
 RE-READ THE CLAIM CLASSIFICATION RULES ABOVE BEFORE PROCEEDING.
 
 **Step 2 — Generate agenda:** Default 2-hour structure. Time-boxed sections linked to source
 stages. Remove sections for missing stages; reallocate time.
 
 **Step 3 — Client pre-read:** 2–3 page external-facing document. Factual, no IDX pitch
-language. Summarises research context for stakeholders. All claims classified and cited.
+language. Summarises research context for stakeholders. **vNext:** All statements in the
+pre-read must be traceable to specific claims from prior artefacts. The pre-read must not
+exceed claim scope — if a claim says "reviewed IR pages", the pre-read cannot say "the site".
+Provisional legacy claims cannot support high-confidence statements in the pre-read.
 
-**Step 4 — Facilitator guide:** Internal document. Talking points per agenda section. Evidence
-references traced to source artefact finding IDs. Suggested discussion questions. Document cue
+**Step 4 — Facilitator guide:** Internal document. Talking points per agenda section.
+**vNext:** Evidence references traced to source artefact claim IDs (not just finding IDs).
+Each talking point must reference ≥1 claim. Suggested discussion questions. Document cue
 notes (which report to show when).
 
-**Step 5 — Compliance self-check** on pre-read and facilitator guide.
+**Step 5 — Compile artefact.** The meeting artefact includes its own `claims[]` array
+containing claims carried forward from prior stages (method: `prior_stage_artefact`) plus
+any new `judgement_support` claims synthesised from prior claims. New synthesis claims must
+reference the prior claim IDs they are derived from.
+
+**Step 6 — Compliance self-check** on pre-read and facilitator guide. Run checks A–H, J–N.
 
 ### Default 2-hour agenda
 
