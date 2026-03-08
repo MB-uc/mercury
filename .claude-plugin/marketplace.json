@@ -1,23 +1,13 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "idx-tools",
-  "version": "1.0.0",
-  "description": "IDX consulting tools for corporate website assessment, competitor analysis, and client engagement preparation",
   "owner": {
-    "name": "IDX",
-    "email": "info@idx.inc"
+    "name": "IDX"
   },
   "plugins": [
     {
       "name": "mercury",
-      "description": "Mercury v3 — prepares IDX consultants for client engagements with brief, compete, sitemap, meeting, and all commands. Includes claim-ledger governance, artefact validator, protocol intervention logging, and branded document rendering.",
-      "version": "3.0.0",
-      "author": {
-        "name": "IDX"
-      },
       "source": ".",
-      "category": "consulting",
-      "strict": false
+      "description": "Mercury v3 — IDX consultant engagement preparation"
     }
   ]
 }
