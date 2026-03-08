@@ -255,3 +255,25 @@ After running any stage, you can produce branded IDX documents:
 ```
 
 This produces Word (.docx) and PowerPoint (.pptx) documents using IDX brand templates. The renderer reads from the artefact JSON files — it formats what Mercury found, it doesn't generate new content.
+
+---
+
+## Setup
+
+### Firecrawl API key
+
+Mercury includes Firecrawl as a pre-configured MCP server. When you install Mercury as a plugin, Firecrawl is set up automatically — but you need to provide your API key.
+
+1. Get your API key from [firecrawl.dev](https://firecrawl.dev) (your team lead can provide this)
+2. In Claude Code or Cowork, go to **Settings → MCP Servers → firecrawl-mcp**
+3. Set the `FIRECRAWL_API_KEY` environment variable to your key
+
+Without a Firecrawl API key, Mercury still works — it falls back to `web_fetch` for page content. But you lose site mapping, PDF extraction, document analysis, and the ability to read JavaScript-rendered or cookie-walled pages.
+
+### Node dependencies
+
+For document rendering (Word, PowerPoint, Excel), install once per session:
+
+```
+npm install docx pptxgenjs exceljs
+```
