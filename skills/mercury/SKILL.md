@@ -26,6 +26,7 @@ markdown report. An integrated Word document is offered at the end.
 - `SITE_CONFIGS.md` — Firecrawl domain overrides
 
 **Data files** (in `data/`):
+- `benchmarks/iq-scoring-model.json` — IQ score estimation model (category weights, observable criteria counts, confidence bands, positioning bands). Used when `idx_api` is unavailable.
 - `benchmarks/lenses.json` — Audit lens definitions (health, investors, ESG, etc.)
 - `benchmarks/page-archetypes.json` — Expected components per page type (core + enhanced)
 - `benchmarks/example-check-rr-investors.json` — Example archetype check output
@@ -158,7 +159,7 @@ Log at the top of every stage report:
 | web_search | ✓ Available | Full situational awareness |
 | web_fetch | ✓ Available | Direct page content (free) |
 | firecrawl | ✓ Available | Site mapping, PDF extraction, browser sandbox |
-| idx_api | ✗ Unavailable | Using offline benchmarks (Jan 2026) |
+| idx_api | ✗ Unavailable | IQ scores estimated from observable criteria (not official) |
 | bash | ✓ Available | File operations enabled |
 ```
 
@@ -198,7 +199,7 @@ not have — even if you "know" the answer from training data.
 
 | Missing tool | Fallback | Report annotation |
 |-------------|----------|-------------------|
-| `idx_api` | Use `data/benchmarks/page-archetypes.json` and `data/benchmarks/lenses.json` | "Using offline benchmark data from [date]" |
+| `idx_api` | Estimate IQ scores from observable criteria using `data/benchmarks/iq-scoring-model.json` and `IQ_CRITERIA.md` | "Estimated IQ scores from observable criteria (idx_api unavailable)" |
 | `idx_api` (client check) | Skip; treat as prospect | "Client status could not be verified" |
 | `idx_api` (case studies) | Omit section | "Case study matching unavailable" |
 | `web_search` | Skip situational awareness | "Situational context unavailable" |
@@ -398,10 +399,10 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
     {
       "id": "E-003",
       "type": "benchmark_data",
-      "source": "data/benchmarks/ (offline snapshot)",
-      "tool_used": "bash",
+      "source": "Estimated from IQ_CRITERIA.md observable criteria (iq-scoring-model.json)",
+      "tool_used": "analysis",
       "accessed_at": "2026-02-26T14:30:30Z",
-      "content_summary": "IQ scores: overall 42.3%, IR 38.1%, index median 38.6%"
+      "content_summary": "Estimated IQ: overall ~42%, IR ~38%, vs FTSE 250 median 38.6%. 251/321 criteria assessable, 197 assessed. Medium confidence."
     },
     {
       "id": "E-004",
@@ -429,7 +430,7 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
     }
   ],
   "evidence_gaps": [
-    "IQ scores from offline snapshot, not live API"
+    "IQ scores estimated from observable criteria — not official Connect.IQ scores (idx_api unavailable)"
   ]
 }
 ```
@@ -718,9 +719,26 @@ opportunity.
 **Step 1 — Intake:** Confirm company identity (legal name, listing, sector). Confirm URL and
 detect subdomains. Lock scope.
 
-**Step 2 — Benchmark check (deterministic):** Fetch IQ scores from `idx_api` or
-`data/benchmarks/page-archetypes.json` and `data/benchmarks/lenses.json`. Fetch index medians for context. If in dataset: rank, percentile,
-category breakdown. If not: estimate band from sector/index medians.
+**Step 2 — Benchmark check (deterministic):** Two paths:
+
+*Path A — idx_api available:* Fetch actual IQ scores from `GET /benchmarks/{company}` and
+`GET /benchmarks/index/{index}`. Report actual rank, percentile, category breakdown.
+
+*Path B — idx_api unavailable (estimation):* Use `data/benchmarks/iq-scoring-model.json` to
+estimate IQ scores from observable criteria. The estimation process:
+1. Check if company is in the 95-company dataset (see `IQ_CRITERIA.md` company list). If so,
+   note that actual scores exist but are unavailable without the API.
+2. During the website assessment (Steps 4-5), evaluate each observable criterion from
+   `IQ_CRITERIA.md` as present (1) or absent (0) against page evidence.
+3. Compute category scores: `(criteria_present / observable_criteria) × 100` per category.
+4. Compute weighted overall: sum of `(category_score × weight)` using weights from the model.
+5. Determine positioning band and confidence level from the model.
+6. Report as `[INFERENCE — estimated from observable criteria]` with the confidence band.
+   Never present estimated scores as official Connect.IQ scores.
+
+Categories excluded from estimation (no observable criteria): SEO (247-270), Paid Search
+(271-279). Their weight is redistributed across observable categories. Technical (221-246)
+and Social (280-321) are partially observable — state the coverage gap.
 
 **Step 3 — Situational awareness (web_search + web_fetch):** Two mandatory sub-steps:
 
@@ -877,7 +895,13 @@ Insert between capability declaration and synthesis:
 ---
 
 ## Connect.IQ benchmark position
-{scores, rank, percentile — or estimated band. Cite data source.}
+{If idx_api: actual scores, rank, percentile with citation.}
+{If estimated: estimated overall and category scores from observable criteria. Include:
+ - Criteria assessed: X of Y observable (Z of 321 total)
+ - Categories excluded: SEO, Paid Search (not observable from crawl)
+ - Confidence band: high/medium/low per iq-scoring-model.json
+ - Positioning: band name and FTSE 250 median comparison
+ - Tag: [INFERENCE — estimated from observable criteria]}
 
 ---
 
@@ -939,8 +963,9 @@ specific, named examples.
 membership. Present to consultant for confirmation BEFORE any research runs. Consultant may add,
 remove, or replace peers. Lock peer set after confirmation.
 
-**Step 2 — Per-peer research:** For each confirmed peer: fetch IQ scores (API or offline),
-website quick audit (same method as stage 1), document checklist check, section classification.
+**Step 2 — Per-peer research:** For each confirmed peer: fetch IQ scores (API) or estimate from
+observable criteria (same method as stage 1, Step 2 Path B), website quick audit (same method as
+stage 1), document checklist check, section classification.
 
 **Step 3 — Sector patterns (idx_api only):** Fetch cross-client patterns from IDX research
 history. Skip if API unavailable.
@@ -950,7 +975,7 @@ history. Skip if API unavailable.
 ### Reasoning phase steps
 
 **Step 5 — Comparative analysis:** Build comparison matrix: client vs each peer vs sector median.
-Dimensions: overall IQ, about, IR, sustainability, careers, media. Identify where client leads
+Dimensions: overall IQ (actual or estimated), about, IR, sustainability, careers, media. Identify where client leads
 (with page-level evidence). Identify where client lags (with peer URLs). White space analysis:
 what no peer does well.
 
@@ -992,7 +1017,9 @@ RE-READ THE CLAIM CLASSIFICATION RULES ABOVE BEFORE PROCEEDING.
 ---
 
 ## Connect.IQ context
-{side-by-side scores for all companies in the comparison}
+{side-by-side scores for all companies in the comparison.
+ If estimated: show estimated scores with confidence level per company.
+ Tag all estimated scores: [INFERENCE — estimated from observable criteria]}
 ```
 
 ### Output files

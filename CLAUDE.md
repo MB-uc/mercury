@@ -19,7 +19,7 @@ This plugin provides two skills:
 ### mercury (core analysis)
 - **Skill file:** `skills/mercury/SKILL.md` — read this for the full protocol
 - **References:** `skills/mercury/references/` — Playbook, IQ criteria, claim schema, document checklist, site configs
-- **Benchmark data:** `skills/mercury/data/benchmarks/` — offline IQ score snapshots
+- **Benchmark data:** `skills/mercury/data/benchmarks/` — IQ scoring model, audit lenses, page archetypes
 - **Commands:** `commands/` — slash command definitions for each stage
 
 ### mercury-render (document rendering)

@@ -1,0 +1,153 @@
+{
+  "_note": "IQ score estimation model. When idx_api is unavailable, Mercury estimates IQ scores by evaluating observable criteria from IQ_CRITERIA.md against page evidence. This produces an ESTIMATED score — always label it as such.",
+  "version": "1.0.0",
+  "methodology": "Count observable binary criteria (present/absent) per category, compute category percentages, apply category weights to derive an estimated overall score. Only criteria observable from a crawl are counted — unobservable criteria (SEO metrics, paid search, social engagement, speed scores) are excluded and the weight is redistributed.",
+
+  "ftse250_reference": {
+    "companies_assessed": 95,
+    "overall_mean": 38.5,
+    "overall_median": 38.6,
+    "overall_sd": 8.6,
+    "overall_min": 17.1,
+    "overall_max": 58.9,
+    "p25_estimate": 32.0,
+    "p75_estimate": 45.0
+  },
+
+  "categories": [
+    {
+      "id": "about",
+      "label": "About Us",
+      "criteria_range": "2-35",
+      "total_criteria": 34,
+      "observable_criteria": 34,
+      "weight": 0.15,
+      "notes": "All criteria observable from crawl"
+    },
+    {
+      "id": "governance",
+      "label": "Corporate Governance",
+      "criteria_range": "36-55",
+      "total_criteria": 20,
+      "observable_criteria": 20,
+      "weight": 0.08,
+      "notes": "All criteria observable from crawl"
+    },
+    {
+      "id": "ir",
+      "label": "Investor Relations",
+      "criteria_range": "56-115",
+      "total_criteria": 60,
+      "observable_criteria": 60,
+      "weight": 0.20,
+      "notes": "All criteria observable from crawl. Largest category."
+    },
+    {
+      "id": "media",
+      "label": "Media / News",
+      "criteria_range": "116-142",
+      "total_criteria": 27,
+      "observable_criteria": 27,
+      "weight": 0.10,
+      "notes": "All criteria observable from crawl"
+    },
+    {
+      "id": "csr",
+      "label": "CSR / Sustainability",
+      "criteria_range": "143-188",
+      "total_criteria": 46,
+      "observable_criteria": 46,
+      "weight": 0.15,
+      "notes": "All criteria observable from crawl"
+    },
+    {
+      "id": "careers",
+      "label": "Careers",
+      "criteria_range": "189-220",
+      "total_criteria": 32,
+      "observable_criteria": 32,
+      "weight": 0.10,
+      "notes": "All criteria observable from crawl"
+    },
+    {
+      "id": "technical",
+      "label": "Technical / Optimisation",
+      "criteria_range": "221-246",
+      "total_criteria": 26,
+      "observable_criteria": 14,
+      "weight": 0.08,
+      "notes": "12 criteria require external tools (HTML validation x3, mobile speed x3, desktop speed x3, accessibility x3). Only 14 observable from crawl."
+    },
+    {
+      "id": "seo",
+      "label": "SEO",
+      "criteria_range": "247-270",
+      "total_criteria": 24,
+      "observable_criteria": 0,
+      "weight": 0.00,
+      "notes": "ALL criteria require external SEO tools (Ahrefs/SEMrush). Not observable from crawl. Excluded from estimation — weight redistributed."
+    },
+    {
+      "id": "paid_search",
+      "label": "Paid Search",
+      "criteria_range": "271-279",
+      "total_criteria": 9,
+      "observable_criteria": 0,
+      "weight": 0.00,
+      "notes": "ALL criteria require external tools. Not observable from crawl. Excluded from estimation — weight redistributed."
+    },
+    {
+      "id": "social",
+      "label": "Social Media",
+      "criteria_range": "280-321",
+      "total_criteria": 42,
+      "observable_criteria": 18,
+      "weight": 0.14,
+      "notes": "18 criteria observable from crawl (presence of social links, search, RSS, share buttons, embedded feeds). 24 require external data (follower counts, engagement, ad spend)."
+    }
+  ],
+
+  "scoring_rules": {
+    "step_1": "For each category with observable_criteria > 0, count how many criteria are present (1) vs absent (0) based on page evidence.",
+    "step_2": "Compute category_score = (criteria_present / observable_criteria) * 100 for each category.",
+    "step_3": "Compute weighted_overall = sum of (category_score * weight) for all categories where weight > 0.",
+    "step_4": "Compare weighted_overall to ftse250_reference to determine estimated band and percentile range.",
+    "step_5": "Report as ESTIMATED IQ score with confidence interval based on unobservable criteria coverage."
+  },
+
+  "confidence_bands": {
+    "high": {
+      "observable_coverage": ">=80%",
+      "description": "Most criteria assessed. Estimate likely within ±3 points of actual IQ score.",
+      "label": "Estimated IQ (high confidence)"
+    },
+    "medium": {
+      "observable_coverage": "60-79%",
+      "description": "Majority of criteria assessed. Estimate likely within ±5 points.",
+      "label": "Estimated IQ (medium confidence)"
+    },
+    "low": {
+      "observable_coverage": "<60%",
+      "description": "Significant criteria unassessed. Estimate should be treated as indicative band only.",
+      "label": "Estimated IQ band (indicative)"
+    }
+  },
+
+  "positioning_bands": [
+    {"band": "Top quartile",   "range": "46+",   "description": "Above P75. Among the strongest sites in the FTSE 250."},
+    {"band": "Above median",   "range": "39-45", "description": "Between median and P75. Solid but with clear improvement opportunities."},
+    {"band": "Around median",  "range": "34-38", "description": "Near the FTSE 250 median. Typical corporate site with standard coverage."},
+    {"band": "Below median",   "range": "27-33", "description": "Below median. Noticeable gaps in content coverage or section depth."},
+    {"band": "Bottom quartile", "range": "<27",   "description": "Below P25. Significant gaps across multiple categories."}
+  ],
+
+  "reporting_rules": [
+    "ALWAYS label estimated scores with [INFERENCE — estimated from observable criteria]",
+    "NEVER present an estimated score as equivalent to an official Connect.IQ score",
+    "State how many of the 321 criteria were assessable and how many were actually assessed",
+    "State which categories were excluded (SEO, Paid Search) and why",
+    "Compare to FTSE 250 median (38.6%) and show the positioning band",
+    "If company IS in the 95-company dataset, note that actual scores are available via idx_api",
+    "Round estimated scores to one decimal place"
+  ]
+}
