@@ -1,14 +1,19 @@
 # Connect.IQ criteria reference
 
-Source: Connect.IQ FTSE 250 Rankings 2024 (95 companies assessed)
+Source: Connect.IQ 2024 dataset (747 companies across FTSE 100, FTSE 250, S&P 500, STOXX 50)
 Framework owner: IDX
-Total criteria: 320+ binary (present/not present) evaluations
+Total criteria: 356 binary (present/not present) evaluations
+Live data: `sector_intelligence.iq_benchmarks` and `sector_intelligence.iq_criteria_detail` in BigQuery
 
-This reference structures the Connect.IQ criteria for use during site analysis. Each criterion is binary: the element is either present (1) or absent (0) on the site. During a crawl-based analysis, focus on criteria that are **observable from page content** — skip criteria requiring external tools (SEO metrics, social media stats) unless you have access to that data.
+This reference structures the Connect.IQ criteria for use during site analysis. Each criterion is binary: the element is either present (1) or absent (0) on the site. When BigQuery is available, actual scores and criteria detail are fetched directly. During crawl-based estimation (when BigQuery is unavailable), focus on criteria that are **observable from page content** — skip criteria requiring external tools (SEO metrics, social media stats) unless you have access to that data.
 
 ---
 
-## FTSE 250 benchmark summary
+## FTSE 250 benchmark summary (offline reference)
+
+> **Note:** These are static reference figures for the FTSE 250 subset. When BigQuery is
+> available, query live index statistics directly — the full dataset covers 4 indices and
+> 747 companies. Use these figures only as fallback context.
 
 | Metric | Value |
 |--------|-------|
@@ -440,12 +445,13 @@ Evaluate every criterion marked "Observable from crawl" across all sections foun
 
 ### When reporting:
 - Always name-check the "IDX Corporate Website Playbook" for best-practice gaps
-- Reference "Connect.IQ FTSE 250 benchmarks" when comparing to peers
-- If the company is in the dataset, cite their actual scores
-- If not, estimate their likely position ("Based on observable criteria, this site would likely sit in the [top/middle/bottom] third of the FTSE 250 rankings")
+- Reference "Connect.IQ benchmarks" when comparing to peers (specify which index)
+- If BigQuery is available and the company is in the dataset, cite actual scores as `[FACT]`
+- If BigQuery is available but the company is NOT in the dataset, use index stats for context and estimate the company's position as `[INFERENCE]`
+- If BigQuery is unavailable, estimate from observable criteria per `iq-scoring-model.json`
 
 ### Companies in the 2024 dataset:
 
-The following 95 companies have full Connect.IQ scores available. Check against this list when analysing a site:
+The full dataset contains 747 companies (FTSE 100: 103, FTSE 250: 93, S&P 500: 501, STOXX 50: 50). Query BigQuery to check if a company is in the dataset. The FTSE 250 subset (listed below for offline reference) contains:
 
 Marks and Spencer, QinetiQ Group, John Wood Group, Balfour Beatty, Babcock, Serco Group, Rotork, Spirax Group, Renishaw, Weir Group, Elementis, Britvic, Cranswick, Greggs, Genus, Spectris, Hunting, Diploma, Grafton Group, Marshalls, HomeServe, Chemring Group, Senior, Drax Group, Vesuvius, Coats Group, Howden Joinery, Victrex, Hill & Smith, Volution Group, Hyve Group, RHI Magnesita, TI Fluid Systems, Ibstock, Morgan Advanced Materials, Bodycote, Essentra, Devro, Savills, Dunelm Group, Inchcape, Oxford Instruments, Genuit Group, Mitie Group, Paragon Banking Group, PageGroup, RWS Holdings, Moonpig, Ascential, Pets at Home, Redde Northgate, Dr. Martens, Watches of Switzerland, Cairn Homes, Kainos Group, Computacenter, Softcat, Future, Bytes Technology, YouGov, Alpha Financial Markets Consulting, Ergomed, Keywords Studios, XPS Pensions Group, Restore, Learning Technologies Group, Boku, Kin and Carta, Trustpilot, Team17 Group, Gamma Communications, Auction Technology Group, FDM Group, TP ICAP Group, Investec, Jupiter Fund Management, Quilter, Man Group, Ashmore Group, Liontrust Asset Management, Ninety One, ICG, Scottish Mortgage Investment Trust, F&C Investment Trust, Polar Capital Holdings, Personal Assets Trust, Impax Asset Management, Greencoat UK Wind, HICL Infrastructure, Hipgnosis Songs Fund, Smiths News, Foresight Group, River and Mercantile Group, Gresham House

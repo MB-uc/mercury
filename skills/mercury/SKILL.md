@@ -26,7 +26,7 @@ markdown report. An integrated Word document is offered at the end.
 - `SITE_CONFIGS.md` — Firecrawl domain overrides
 
 **Data files** (in `data/`):
-- `benchmarks/iq-scoring-model.json` — IQ score estimation model (category weights, observable criteria counts, confidence bands, positioning bands). Used when `idx_api` is unavailable.
+- `benchmarks/iq-scoring-model.json` — IQ score estimation model (category weights, observable criteria counts, confidence bands, positioning bands). Used when BigQuery is unavailable.
 - `benchmarks/lenses.json` — Audit lens definitions (health, investors, ESG, etc.)
 - `benchmarks/page-archetypes.json` — Expected components per page type (core + enhanced)
 - `benchmarks/example-check-rr-investors.json` — Example archetype check output
@@ -114,7 +114,7 @@ At the start of every stage, silently probe each tool. Record the result.
 | `web_search` | Attempt a trivial search | Situational awareness, news, corporate signals |
 | `web_fetch` | Attempt to fetch a known URL | Page content retrieval (free, no credits) |
 | `firecrawl` | Check if `firecrawl_scrape` responds | Site mapping, deep scraping, PDF/document extraction, browser sandbox |
-| `idx_api` | Attempt `GET /benchmarks/test` | IQ scores, client data, case studies |
+| `bigquery` | Attempt `SELECT 1 FROM sector_intelligence.iq_benchmarks LIMIT 1` via `mcp__bigquery__query` | IQ scores, criteria detail, prior analyses |
 | `bash` | Attempt a trivial command | File operations, offline data access |
 
 When `firecrawl` is available, also check which sub-capabilities are present:
@@ -159,7 +159,7 @@ Log at the top of every stage report:
 | web_search | ✓ Available | Full situational awareness |
 | web_fetch | ✓ Available | Direct page content (free) |
 | firecrawl | ✓ Available | Site mapping, PDF extraction, browser sandbox |
-| idx_api | ✗ Unavailable | IQ scores estimated from observable criteria (not official) |
+| bigquery | ✓ Available | Official IQ scores for 747 companies (FTSE 100, FTSE 250, S&P 500, STOXX 50) |
 | bash | ✓ Available | File operations enabled |
 ```
 
@@ -188,9 +188,9 @@ not have — even if you "know" the answer from training data.
 | Structural claims (quantitative) | `web_fetch` or `firecrawl` | Qualitative only from search snippets |
 | Site structure mapping | `firecrawl_map` or `web_fetch` + manual navigation | Partial structure from homepage navigation only |
 | Visual/UX claims | `firecrawl_browser` (screenshots) | Prohibited entirely |
-| Benchmark scores (specific) | `idx_api` or offline benchmark data | Estimated band only |
+| Benchmark scores (specific) | `bigquery` or estimation from observable criteria | Estimated band only |
 | Situational claims | `web_search` | Prohibited — no situational section |
-| Client analytics | `idx_api` with client confirmation | Prohibited — treated as prospect |
+| Client analytics | Not available via BigQuery | Treated as prospect |
 | Document presence | `web_fetch` or `web_search` | Only if URL found in search results |
 | Document content (PDF/DOCX/XLSX) | `firecrawl_scrape` | Presence only — no content extraction |
 | Gated/JS-rendered content | `firecrawl_browser` | Note as inaccessible gap |
@@ -199,9 +199,7 @@ not have — even if you "know" the answer from training data.
 
 | Missing tool | Fallback | Report annotation |
 |-------------|----------|-------------------|
-| `idx_api` | Estimate IQ scores from observable criteria using `data/benchmarks/iq-scoring-model.json` and `IQ_CRITERIA.md` | "Estimated IQ scores from observable criteria (idx_api unavailable)" |
-| `idx_api` (client check) | Skip; treat as prospect | "Client status could not be verified" |
-| `idx_api` (case studies) | Omit section | "Case study matching unavailable" |
+| `bigquery` | Estimate IQ scores from observable criteria using `data/benchmarks/iq-scoring-model.json` and `IQ_CRITERIA.md` | "IQ scores estimated from observable criteria (BigQuery unavailable)" |
 | `web_search` | Skip situational awareness | "Situational context unavailable" |
 | `web_fetch` | `firecrawl_scrape` for all pages | "Using Firecrawl for all page fetches" |
 | `firecrawl` | `web_fetch` + manual navigation | "No site mapping, PDF extraction, or browser access" |
@@ -278,14 +276,15 @@ Every stage report ends with a citations section. Every `[FACT]` has a correspon
 |-----|------|--------|----------|-----------------|
 | [1] | Web page | https://www.company.com/investors | 26 Feb 2026 | F-001, F-003 |
 | [2] | Document | Annual Report 2025, p.12 | 26 Feb 2026 | F-002 |
-| [3] | API | Connect.IQ, FTSE 100 index | Offline, Jan 2026 | F-004 |
+| [3] | BigQuery | Connect.IQ, FTSE 100 index (sector_intelligence.iq_benchmarks) | 26 Feb 2026 | F-004 |
 | [4] | Search | web_search: "company leadership 2025" | 26 Feb 2026 | F-005 |
 ```
 
 Rules:
 - Every `[FACT]` must have at least one numbered citation reference
 - Search-sourced facts cite the query used
-- Offline benchmark facts cite the snapshot date
+- BigQuery benchmark facts cite the dataset year and table
+- Estimated benchmark facts cite the estimation methodology and confidence level
 - No orphaned citations (cited but not referenced)
 - No orphaned facts (referenced but not cited)
 
@@ -372,7 +371,7 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
   "collected_at": "2026-02-26T14:30:00Z",
   "capabilities_available": ["web_search", "web_fetch", "firecrawl", "bash"],
   "firecrawl_sub_capabilities": ["firecrawl_scrape", "firecrawl_map", "firecrawl_crawl", "firecrawl_browser"],
-  "capabilities_unavailable": ["idx_api"],
+  "capabilities_available_data": ["bigquery"],
   "scope": {
     "focus": "investor communications",
     "confirmed_at": "2026-02-26T14:28:00Z"
@@ -399,10 +398,10 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
     {
       "id": "E-003",
       "type": "benchmark_data",
-      "source": "Estimated from IQ_CRITERIA.md observable criteria (iq-scoring-model.json)",
-      "tool_used": "analysis",
+      "source": "sector_intelligence.iq_benchmarks (BigQuery)",
+      "tool_used": "mcp__bigquery__query",
       "accessed_at": "2026-02-26T14:30:30Z",
-      "content_summary": "Estimated IQ: overall ~42%, IR ~38%, vs FTSE 250 median 38.6%. 251/321 criteria assessable, 197 assessed. Medium confidence."
+      "content_summary": "IQ scores: overall 42.3%, IR 38.1%, careers 45.2%. FTSE 100, rank 67/103. Index median 41.8%."
     },
     {
       "id": "E-004",
@@ -430,7 +429,7 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
     }
   ],
   "evidence_gaps": [
-    "IQ scores estimated from observable criteria — not official Connect.IQ scores (idx_api unavailable)"
+    "IQ scores from BigQuery (2024 dataset)"
   ]
 }
 ```
@@ -686,13 +685,16 @@ failures if any.}
 
 ---
 
-## Write fallback
+## Results storage
 
-When `idx_api` is unavailable for writing results:
+Analysis results are saved locally as artefact JSON files. When BigQuery is available,
+prior analyses can be checked via:
 
-1. Save the analysis JSON to `mercury-queue/{timestamp}-{company}-{stage}.json`
-2. Notify: "Analysis saved locally. It will sync to IDX when you're next connected."
-3. A daily check POSTs queued files to `POST /queue` when connectivity returns
+```sql
+SELECT * FROM sector_intelligence.analyses
+WHERE LOWER(company_name) LIKE LOWER('%{name}%')
+ORDER BY analysed_at DESC
+```
 
 ---
 
@@ -721,24 +723,65 @@ detect subdomains. Lock scope.
 
 **Step 2 — Benchmark check (deterministic):** Two paths:
 
-*Path A — idx_api available:* Fetch actual IQ scores from `GET /benchmarks/{company}` and
-`GET /benchmarks/index/{index}`. Report actual rank, percentile, category breakdown.
+*Path A — BigQuery available (preferred):* Query `sector_intelligence.iq_benchmarks` via
+`mcp__bigquery__query` for official IQ scores. Three queries:
 
-*Path B — idx_api unavailable (estimation):* Use `data/benchmarks/iq-scoring-model.json` to
-estimate IQ scores from observable criteria. The estimation process:
-1. Check if company is in the 95-company dataset (see `IQ_CRITERIA.md` company list). If so,
-   note that actual scores exist but are unavailable without the API.
-2. During the website assessment (Steps 4-5), evaluate each observable criterion from
+```sql
+-- 1. Company scores (fuzzy match on company name)
+SELECT company, overall, company_narrative, content_mix, channel_mix,
+       optimization, reach, about_us, ir, media, csr, careers,
+       reputational_resilience, index_name, dataset_year
+FROM sector_intelligence.iq_benchmarks
+WHERE LOWER(company) LIKE LOWER('%{company_name}%')
+
+-- 2. Index stats for context
+SELECT
+  AVG(overall) as mean, APPROX_QUANTILES(overall, 4)[OFFSET(2)] as median,
+  APPROX_QUANTILES(overall, 4)[OFFSET(1)] as p25,
+  APPROX_QUANTILES(overall, 4)[OFFSET(3)] as p75,
+  MIN(overall) as min, MAX(overall) as max, COUNT(*) as n
+FROM sector_intelligence.iq_benchmarks
+WHERE index_name = '{index_name}'
+
+-- 3. Company rank within index
+SELECT company, overall,
+  RANK() OVER (ORDER BY overall DESC) as rank,
+  COUNT(*) OVER () as total
+FROM sector_intelligence.iq_benchmarks
+WHERE index_name = '{index_name}'
+ORDER BY overall DESC
+```
+
+If the company is in the dataset (747 companies across FTSE 100, FTSE 250, S&P 500, STOXX 50):
+report actual scores, rank, percentile, and category breakdown as `[FACT]`.
+
+If the company is NOT in the dataset: note this, then fall through to Path B for estimation.
+Still use BQ index stats for context (medians, percentiles).
+
+For granular criteria detail, query `sector_intelligence.iq_criteria_detail`:
+
+```sql
+-- Per-criterion pass/fail for a company
+SELECT criterion_number, criterion_name, category, present
+FROM sector_intelligence.iq_criteria_detail
+WHERE LOWER(company) LIKE LOWER('%{company_name}%')
+ORDER BY criterion_number
+```
+
+This gives 356 binary criteria per company — use for gap analysis in Steps 4-5.
+
+*Path B — BigQuery unavailable or company not in dataset (estimation):* Use
+`data/benchmarks/iq-scoring-model.json` to estimate IQ scores from observable criteria.
+1. During the website assessment (Steps 4-5), evaluate each observable criterion from
    `IQ_CRITERIA.md` as present (1) or absent (0) against page evidence.
-3. Compute category scores: `(criteria_present / observable_criteria) × 100` per category.
-4. Compute weighted overall: sum of `(category_score × weight)` using weights from the model.
-5. Determine positioning band and confidence level from the model.
-6. Report as `[INFERENCE — estimated from observable criteria]` with the confidence band.
+2. Compute category scores: `(criteria_present / observable_criteria) × 100` per category.
+3. Compute weighted overall: sum of `(category_score × weight)` using weights from the model.
+4. Determine positioning band and confidence level from the model.
+5. Report as `[INFERENCE — estimated from observable criteria]` with the confidence band.
    Never present estimated scores as official Connect.IQ scores.
 
-Categories excluded from estimation (no observable criteria): SEO (247-270), Paid Search
-(271-279). Their weight is redistributed across observable categories. Technical (221-246)
-and Social (280-321) are partially observable — state the coverage gap.
+Categories excluded from estimation (no observable criteria): SEO, Paid Search. Their weight
+is redistributed across observable categories.
 
 **Step 3 — Situational awareness (web_search + web_fetch):** Two mandatory sub-steps:
 
@@ -865,8 +908,8 @@ limitation.
 If `firecrawl` is unavailable, skip this step. Note document URLs in evidence gaps and annotate:
 "Document content not extracted — Firecrawl unavailable."
 
-**Step 5 — Client check (idx_api only):** If confirmed IDX client: GA4 trends, Leadfeeder data,
-engagement metrics. If prospect or API unavailable: skip, note as prospect.
+**Step 5 — Client check:** Client analytics (GA4, Leadfeeder) are not currently available via
+BigQuery. Treat all companies as prospects. Note as: "Client analytics not available."
 
 **Step 6 — Save evidence manifest.**
 
@@ -895,13 +938,11 @@ Insert between capability declaration and synthesis:
 ---
 
 ## Connect.IQ benchmark position
-{If idx_api: actual scores, rank, percentile with citation.}
-{If estimated: estimated overall and category scores from observable criteria. Include:
- - Criteria assessed: X of Y observable (Z of 321 total)
- - Categories excluded: SEO, Paid Search (not observable from crawl)
- - Confidence band: high/medium/low per iq-scoring-model.json
- - Positioning: band name and FTSE 250 median comparison
- - Tag: [INFERENCE — estimated from observable criteria]}
+{If BigQuery available and company in dataset: actual scores, rank, percentile as [FACT].
+ Show: overall, top 3 category scores, bottom 3 category scores, index rank.
+ Compare to index median, P25, P75.}
+{If BigQuery unavailable or company not in dataset: estimated scores from observable
+ criteria as [INFERENCE]. Include criteria coverage, confidence band, positioning band.}
 
 ---
 
@@ -963,12 +1004,28 @@ specific, named examples.
 membership. Present to consultant for confirmation BEFORE any research runs. Consultant may add,
 remove, or replace peers. Lock peer set after confirmation.
 
-**Step 2 — Per-peer research:** For each confirmed peer: fetch IQ scores (API) or estimate from
-observable criteria (same method as stage 1, Step 2 Path B), website quick audit (same method as
-stage 1), document checklist check, section classification.
+**Step 2 — Per-peer research:** For each confirmed peer: fetch IQ scores from BigQuery (or
+estimate from observable criteria if not in dataset), website quick audit (same method as
+stage 1), document checklist check, section classification. When BigQuery is available, fetch
+all peers in one query:
 
-**Step 3 — Sector patterns (idx_api only):** Fetch cross-client patterns from IDX research
-history. Skip if API unavailable.
+```sql
+SELECT company, overall, company_narrative, ir, csr, careers, about_us, media, index_name
+FROM sector_intelligence.iq_benchmarks
+WHERE LOWER(company) IN (LOWER('{peer1}'), LOWER('{peer2}'), ...)
+```
+
+**Step 3 — Sector patterns:** When BigQuery is available, query index-level distributions for
+context:
+
+```sql
+SELECT index_name, AVG(overall) as mean, APPROX_QUANTILES(overall, 4)[OFFSET(2)] as median,
+  MIN(overall) as min, MAX(overall) as max, COUNT(*) as n
+FROM sector_intelligence.iq_benchmarks
+GROUP BY index_name
+```
+
+Skip if BigQuery unavailable.
 
 **Step 4 — Save evidence manifest.**
 
@@ -1018,8 +1075,8 @@ RE-READ THE CLAIM CLASSIFICATION RULES ABOVE BEFORE PROCEEDING.
 
 ## Connect.IQ context
 {side-by-side scores for all companies in the comparison.
- If estimated: show estimated scores with confidence level per company.
- Tag all estimated scores: [INFERENCE — estimated from observable criteria]}
+ If from BigQuery: actual scores as [FACT]. Include index context.
+ If estimated: show estimated scores with confidence level, tagged [INFERENCE].}
 ```
 
 ### Output files
@@ -1364,29 +1421,71 @@ are merged into a single appendix, deduplicated by source URL.
 
 ---
 
-## IDX API endpoints
+## BigQuery data source
 
-Called when `idx_api` is available. All read-only except for storing results.
+Mercury accesses IDX benchmark data via the BigQuery MCP server (`mcp__bigquery__query`).
+All queries are read-only. The data lives in the `sector_intelligence` dataset.
 
-### Read
+### Tables
 
-| Endpoint | Returns | Stages |
-|----------|---------|--------|
-| `GET /benchmarks/{company}` | IQ scores — overall and by category | 1, 2 |
-| `GET /benchmarks/index/{index}` | Median, P25, P75 for an index | 1, 2 |
-| `GET /benchmarks/sector/{sector}` | Sector-level distribution | 2 |
-| `GET /criteria/{company}` | Granular criteria pass/fail | 1, 3 |
-| `GET /analyses/{company}` | Cached prior analyses | 2, 4 |
-| `GET /clients/{id}/analytics` | GA4 and Leadfeeder data (gated) | 1 |
-| `GET /case-studies` | IDX project references | 1, 3 |
-| `GET /sector-patterns/{sector}` | Cross-client patterns (anonymised) | 2 |
+| Table | Contents | Rows | Stages |
+|-------|----------|------|--------|
+| `iq_benchmarks` | IQ scores — overall and 11 categories per company | 747 companies | 1, 2 |
+| `iq_criteria_detail` | Binary pass/fail for each of 356 criteria per company | ~266K rows | 1, 2, 3 |
+| `analyses` | Cached prior Mercury analyses | Variable | 2, 4 |
 
-### Write
+### Coverage
 
-| Endpoint | Accepts | Stages |
-|----------|---------|--------|
-| `POST /analyses` | Full analysis result JSON | All |
-| `POST /queue` | Same payload (offline fallback) | All |
+| Index | Companies |
+|-------|-----------|
+| S&P 500 | 501 |
+| FTSE 100 | 103 |
+| FTSE 250 | 93 |
+| STOXX 50 | 50 |
+
+### Score columns in `iq_benchmarks`
+
+`company`, `overall`, `company_narrative`, `content_mix`, `channel_mix`, `optimization`,
+`reach`, `about_us`, `ir`, `media`, `csr`, `careers`, `reputational_resilience`,
+`index_name`, `dataset_year`
+
+### Key queries
+
+```sql
+-- Company lookup (fuzzy)
+SELECT * FROM sector_intelligence.iq_benchmarks
+WHERE LOWER(company) LIKE LOWER('%{name}%')
+
+-- Index statistics
+SELECT AVG(overall) as mean,
+  APPROX_QUANTILES(overall, 4)[OFFSET(2)] as median,
+  APPROX_QUANTILES(overall, 4)[OFFSET(1)] as p25,
+  APPROX_QUANTILES(overall, 4)[OFFSET(3)] as p75
+FROM sector_intelligence.iq_benchmarks
+WHERE index_name = '{index}'
+
+-- Company rank
+SELECT company, overall,
+  RANK() OVER (ORDER BY overall DESC) as rank,
+  COUNT(*) OVER () as total
+FROM sector_intelligence.iq_benchmarks
+WHERE index_name = '{index}'
+
+-- Criteria detail
+SELECT criterion_number, criterion_name, category, present
+FROM sector_intelligence.iq_criteria_detail
+WHERE LOWER(company) LIKE LOWER('%{name}%')
+ORDER BY criterion_number
+
+-- Prior analyses
+SELECT * FROM sector_intelligence.analyses
+WHERE LOWER(company_name) LIKE LOWER('%{name}%')
+```
+
+### Fallback
+
+When BigQuery MCP is unavailable, Mercury estimates IQ scores from observable criteria
+using `data/benchmarks/iq-scoring-model.json`. See Step 2, Path B.
 
 ---
 

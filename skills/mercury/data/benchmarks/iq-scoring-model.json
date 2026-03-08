@@ -1,5 +1,5 @@
 {
-  "_note": "IQ score estimation model. When idx_api is unavailable, Mercury estimates IQ scores by evaluating observable criteria from IQ_CRITERIA.md against page evidence. This produces an ESTIMATED score — always label it as such.",
+  "_note": "IQ score estimation model. When BigQuery is unavailable, Mercury estimates IQ scores by evaluating observable criteria from IQ_CRITERIA.md against page evidence. This produces an ESTIMATED score — always label it as such.",
   "version": "1.0.0",
   "methodology": "Count observable binary criteria (present/absent) per category, compute category percentages, apply category weights to derive an estimated overall score. Only criteria observable from a crawl are counted — unobservable criteria (SEO metrics, paid search, social engagement, speed scores) are excluded and the weight is redistributed.",
 
@@ -147,7 +147,7 @@
     "State how many of the 321 criteria were assessable and how many were actually assessed",
     "State which categories were excluded (SEO, Paid Search) and why",
     "Compare to FTSE 250 median (38.6%) and show the positioning band",
-    "If company IS in the 95-company dataset, note that actual scores are available via idx_api",
+    "If company IS in the 747-company dataset, note that actual scores are available via BigQuery",
     "Round estimated scores to one decimal place"
   ]
 }

@@ -36,7 +36,7 @@ A focused assessment of a single company's website. Typically 5-6 pages.
 2. **Executive summary** — 2-3 paragraphs summarising overall impression, followed by a 4-column rating table (Overall, IR, Sustainability, Careers or other key sections) with qualitative ratings (Strong/Adequate/Weak)
 3. **What they do well** — 3 numbered strengths, each with H3 heading and 1 paragraph of detail. Lead with the most impressive finding. Reference specific content observed on the site.
 4. **Gaps versus best practice** — Priority table first (columns: Gap, Section, Priority), then each gap gets H3 heading + 1 paragraph of detail. Order: High priority first, then Medium.
-5. **Connect.IQ benchmark context** — Table comparing company scores against index medians and percentiles. If actual scores available (idx_api): show official IQ data. If estimated: show estimated scores with confidence level and criteria coverage, tagged as [INFERENCE]. 1 paragraph of interpretation below.
+5. **Connect.IQ benchmark context** — Table comparing company scores against index medians and percentiles. If actual scores available (BigQuery): show official IQ data. If estimated: show estimated scores with confidence level and criteria coverage, tagged as [INFERENCE]. 1 paragraph of interpretation below.
 6. **Talking points** — 3 numbered points designed for pitch conversations. Each has a punchy H3 headline and 1 paragraph that frames the insight in commercial terms.
 7. **Pages analysed** — Table listing all pages assessed (columns: Page type, URL, Assessment).
 8. **Methodology** — 2-3 paragraphs in grey text explaining the audit approach, assessment levels, and data sources.

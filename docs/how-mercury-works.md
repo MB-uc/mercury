@@ -51,7 +51,7 @@ Mercury uses the same tools available to any Claude session:
 | Firecrawl scrape | Reads pages that resist normal fetching (cookie walls, JS rendering) and extracts content from PDFs, Word docs, and Excel files | Public websites | 1 credit per page |
 | Firecrawl map | Discovers all URLs on a company's domain | Public websites | 1 credit |
 | Firecrawl browser | Interactive browser for gated content (e.g., IR sections requiring terms acceptance) | Public websites | 1+ credits |
-| IDX benchmarks | Looks up Connect.IQ scores | IDX's own benchmark dataset | Free |
+| IDX benchmarks (BigQuery) | Looks up Connect.IQ scores for 747 companies across FTSE 100, FTSE 250, S&P 500, and STOXX 50 | IDX's benchmark database | Free |
 
 Mercury uses tools in cost order — free tools first, then paid tools only when needed. It will always try `web_fetch` before escalating to Firecrawl. For document extraction (PDFs), it asks you before extracting so you control the credit spend.
 
