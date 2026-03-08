@@ -3,15 +3,12 @@
   "version": "1.0.0",
   "methodology": "Count observable binary criteria (present/absent) per category, compute category percentages, apply category weights to derive an estimated overall score. Only criteria observable from a crawl are counted — unobservable criteria (SEO metrics, paid search, social engagement, speed scores) are excluded and the weight is redistributed.",
 
-  "ftse250_reference": {
-    "companies_assessed": 95,
-    "overall_mean": 38.5,
-    "overall_median": 38.6,
-    "overall_sd": 8.6,
-    "overall_min": 17.1,
-    "overall_max": 58.9,
-    "p25_estimate": 32.0,
-    "p75_estimate": 45.0
+  "index_reference": {
+    "_note": "Static fallback stats from BigQuery (2024 dataset). When BigQuery is available, query live stats instead.",
+    "FTSE 100": { "n": 103, "mean": 49.3, "median": 49.2, "sd": 10.9, "min": 16.2, "max": 68.6, "p25": 44.1, "p75": 57.1 },
+    "FTSE 250": { "n": 93,  "mean": 38.5, "median": 38.6, "sd": 8.7,  "min": 17.1, "max": 58.9, "p25": 31.8, "p75": 44.8 },
+    "S&P 500":  { "n": 501, "mean": 43.3, "median": 44.2, "sd": 8.4,  "min": 11.1, "max": 64.3, "p25": 38.1, "p75": 49.0 },
+    "STOXX 50": { "n": 50,  "mean": 53.6, "median": 53.6, "sd": 9.8,  "min": 32.7, "max": 73.5, "p25": 47.8, "p75": 60.9 }
   },
 
   "categories": [
@@ -133,20 +130,23 @@
     }
   },
 
-  "positioning_bands": [
-    {"band": "Top quartile",   "range": "46+",   "description": "Above P75. Among the strongest sites in the FTSE 250."},
-    {"band": "Above median",   "range": "39-45", "description": "Between median and P75. Solid but with clear improvement opportunities."},
-    {"band": "Around median",  "range": "34-38", "description": "Near the FTSE 250 median. Typical corporate site with standard coverage."},
-    {"band": "Below median",   "range": "27-33", "description": "Below median. Noticeable gaps in content coverage or section depth."},
-    {"band": "Bottom quartile", "range": "<27",   "description": "Below P25. Significant gaps across multiple categories."}
-  ],
+  "positioning_bands": {
+    "_note": "Use the company's index for positioning. These bands use P25, median, P75 from index_reference. The labels below are generic — substitute actual index values when reporting.",
+    "bands": [
+      {"band": "Top quartile",    "rule": "score > P75",          "description": "Above P75. Among the strongest sites in the index."},
+      {"band": "Above median",    "rule": "median < score <= P75", "description": "Between median and P75. Solid but with improvement opportunities."},
+      {"band": "Around median",   "rule": "within ±2 of median",  "description": "Near the index median. Typical site with standard coverage."},
+      {"band": "Below median",    "rule": "P25 < score < median-2", "description": "Below median. Noticeable gaps in content coverage or depth."},
+      {"band": "Bottom quartile", "rule": "score <= P25",          "description": "Below P25. Significant gaps across multiple categories."}
+    ]
+  },
 
   "reporting_rules": [
     "ALWAYS label estimated scores with [INFERENCE — estimated from observable criteria]",
     "NEVER present an estimated score as equivalent to an official Connect.IQ score",
-    "State how many of the 321 criteria were assessable and how many were actually assessed",
+    "State how many of the 356 criteria were assessable and how many were actually assessed",
     "State which categories were excluded (SEO, Paid Search) and why",
-    "Compare to FTSE 250 median (38.6%) and show the positioning band",
+    "Compare to the relevant index median (not just FTSE 250) and show the positioning band",
     "If company IS in the 747-company dataset, note that actual scores are available via BigQuery",
     "Round estimated scores to one decimal place"
   ]

@@ -42,7 +42,7 @@ commands/              # Slash command definitions
 skills/
   mercury/             # Core analysis skill
     references/        # Playbook, IQ criteria, document checklist, site configs
-    data/benchmarks/   # Offline benchmark snapshots
+    data/benchmarks/   # IQ scoring model, audit lenses, page archetypes
   mercury-render/      # Document rendering skill
     references/        # Report structures, markdown templates
     scripts/           # Node.js rendering scripts

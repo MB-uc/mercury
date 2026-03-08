@@ -81,7 +81,8 @@ No other certainty values may appear. The claim builder must reject any claim wi
 |-------|---------|
 | `web_fetch` | Page content retrieved directly |
 | `web_search` | Found via search query |
-| `benchmark_snapshot` | From offline benchmark data |
+| `bigquery` | From BigQuery IQ benchmark data |
+| `benchmark_estimation` | Estimated from observable criteria (BigQuery unavailable) |
 | `prior_stage_artefact` | Carried forward from earlier stage claim |
 | `manual_override` | Analyst override with justification |
 
