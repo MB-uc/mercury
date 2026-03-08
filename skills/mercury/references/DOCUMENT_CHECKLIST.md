@@ -15,7 +15,7 @@ Each item has three tags:
 
 **Automation tier**
 - **T1** — fully automatable now via web scraping, search, and free APIs
-- **T2** — partially automatable; the document can be found but full extraction or analysis is limited
+- **T2** — partially automatable; the document can be found but full extraction or analysis is limited. **When Firecrawl is available, many T2 items (PDFs, Word docs, Excel files) become fully extractable** — Firecrawl's document parser converts these to markdown automatically. Items marked T2 should be treated as T1 when Firecrawl is available.
 - **T3** — not yet available; requires paid subscriptions, manual input, or specialist tools
 
 **How skills use it**
@@ -28,7 +28,7 @@ Each item has three tags:
 
 | # | Document | Skill | Tier | Where to find it |
 |---|----------|-------|------|-----------------|
-| 1 | Annual report and accounts | BOTH | T2 | Company website IR section (PDF — findable but full extraction limited) |
+| 1 | Annual report and accounts | BOTH | T2 | Company website IR section (PDF — findable; content extractable via Firecrawl when available) |
 | 2 | Preliminary results announcement (prelims) | CR | T1 | RNS, company website IR section |
 | 3 | Prelims presentation slides | BOTH | T1 | Company website IR section |
 | 4 | Prelims webcast / conference call | BOTH | T2 | Company website (link findable, content not transcribable) |
@@ -87,7 +87,7 @@ Each item has three tags:
 
 | # | Document | Skill | Tier | Where to find it |
 |---|----------|-------|------|-----------------|
-| 32 | Sustainability report / ESG report | BOTH | T2 | Company website (PDF — findable but extraction limited) |
+| 32 | Sustainability report / ESG report | BOTH | T2 | Company website (PDF — findable; content extractable via Firecrawl when available) |
 | 33 | TCFD report | BOTH | T2 | Standalone or within annual report |
 | 34 | CDP submission | CR | T2 | CDP website (some public) |
 | 35 | Net zero transition plan | BOTH | T1 | Company website or within annual report |

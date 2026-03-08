@@ -109,11 +109,40 @@ At the start of every stage, silently probe each tool. Record the result.
 | Capability | How to detect | What it enables |
 |------------|--------------|-----------------|
 | `web_search` | Attempt a trivial search | Situational awareness, news, corporate signals |
-| `web_fetch` | Attempt to fetch a known URL | Page content retrieval, document access |
-| `evidence_collector` | Check if MCP server responds | Sitemap parsing, batch screenshots |
+| `web_fetch` | Attempt to fetch a known URL | Page content retrieval (free, no credits) |
+| `firecrawl` | Check if `firecrawl_scrape` responds | Site mapping, deep scraping, PDF/document extraction, browser sandbox |
 | `idx_api` | Attempt `GET /benchmarks/test` | IQ scores, client data, case studies |
-| `firecrawl` | Check if API key is set | Deep site crawling |
 | `bash` | Attempt a trivial command | File operations, offline data access |
+
+When `firecrawl` is available, also check which sub-capabilities are present:
+
+| Sub-capability | How to detect | What it adds |
+|----------------|--------------|--------------|
+| `firecrawl_scrape` | Scrape a test URL | Page scraping with cookie handling, PDF/DOCX/XLSX extraction |
+| `firecrawl_map` | Map a test domain | Full URL discovery across a domain (returns all discoverable URLs) |
+| `firecrawl_crawl` | Check if crawl endpoint responds | Multi-page crawling with depth control |
+| `firecrawl_browser_*` | Check if `firecrawl_browser_create` responds | Interactive browser sessions for JS-rendered or gated content |
+
+### Collection escalation protocol
+
+Mercury uses tools in cost order. Start free, escalate only when the cheaper tool fails.
+
+```
+Level 0: web_fetch          — free, try first for any HTML page
+Level 1: firecrawl_scrape   — 1 credit, use when web_fetch fails (cookie walls, JS rendering, PDFs)
+Level 2: firecrawl_browser  — 1+ credits, use when scrape fails (multi-step interaction, gated IR sections)
+```
+
+**Escalation triggers:**
+- `web_fetch` returns a cookie consent page, empty content, or a redirect loop → escalate to `firecrawl_scrape`
+- `web_fetch` returns a page that references content not visible (JS-rendered tabs, accordions) → escalate to `firecrawl_scrape`
+- `firecrawl_scrape` returns a gate or login prompt → escalate to `firecrawl_browser`
+- Target is a PDF, DOCX, or XLSX URL → go directly to `firecrawl_scrape` (Level 1)
+
+**Do not escalate when:**
+- `web_fetch` succeeds with clean content — no need to spend credits
+- The content is behind a login requiring credentials Mercury doesn't have — note as a gap
+- Credits are exhausted — note as a limitation, do not retry
 
 ### Capability manifest
 
@@ -125,11 +154,23 @@ Log at the top of every stage report:
 | Tool | Status | Impact |
 |------|--------|--------|
 | web_search | ✓ Available | Full situational awareness |
-| web_fetch | ✓ Available | Direct page content |
-| evidence_collector | ✗ Unavailable | No batch screenshots; text only |
+| web_fetch | ✓ Available | Direct page content (free) |
+| firecrawl | ✓ Available | Site mapping, PDF extraction, browser sandbox |
 | idx_api | ✗ Unavailable | Using offline benchmarks (Jan 2026) |
-| firecrawl | ✗ Unavailable | Manual navigation only |
 | bash | ✓ Available | File operations enabled |
+```
+
+When firecrawl is available, also log sub-capabilities:
+
+```
+### Firecrawl sub-capabilities
+
+| Tool | Status |
+|------|--------|
+| firecrawl_scrape | ✓ Available |
+| firecrawl_map | ✓ Available |
+| firecrawl_crawl | ✓ Available |
+| firecrawl_browser | ✓ Available |
 ```
 
 ### Permitted finding types
@@ -140,13 +181,16 @@ not have — even if you "know" the answer from training data.
 
 | Finding type | Requires | Without it |
 |-------------|----------|------------|
-| Page content claims | `web_fetch` or `evidence_collector` | Prohibited |
-| Structural claims (quantitative) | `web_fetch` or `evidence_collector` or `firecrawl` | Qualitative only from search snippets |
-| Visual/UX claims | `evidence_collector` (screenshots) | Prohibited entirely |
+| Page content claims | `web_fetch` or `firecrawl` | Prohibited |
+| Structural claims (quantitative) | `web_fetch` or `firecrawl` | Qualitative only from search snippets |
+| Site structure mapping | `firecrawl_map` or `web_fetch` + manual navigation | Partial structure from homepage navigation only |
+| Visual/UX claims | `firecrawl_browser` (screenshots) | Prohibited entirely |
 | Benchmark scores (specific) | `idx_api` or offline `benchmarks.json` | Estimated band only |
 | Situational claims | `web_search` | Prohibited — no situational section |
 | Client analytics | `idx_api` with client confirmation | Prohibited — treated as prospect |
 | Document presence | `web_fetch` or `web_search` | Only if URL found in search results |
+| Document content (PDF/DOCX/XLSX) | `firecrawl_scrape` | Presence only — no content extraction |
+| Gated/JS-rendered content | `firecrawl_browser` | Note as inaccessible gap |
 
 ### Degradation fallbacks
 
@@ -156,9 +200,10 @@ not have — even if you "know" the answer from training data.
 | `idx_api` (client check) | Skip; treat as prospect | "Client status could not be verified" |
 | `idx_api` (case studies) | Omit section | "Case study matching unavailable" |
 | `web_search` | Skip situational awareness | "Situational context unavailable" |
-| `web_fetch` | Search snippets + cached evidence | "Direct page access unavailable" |
-| `evidence_collector` | Manual navigation via web_fetch | "No batch evidence collection" |
-| `firecrawl` | sitemap.xml + manual navigation | "Deep crawl unavailable" |
+| `web_fetch` | `firecrawl_scrape` for all pages | "Using Firecrawl for all page fetches" |
+| `firecrawl` | `web_fetch` + manual navigation | "No site mapping, PDF extraction, or browser access" |
+| `firecrawl_map` | Parse sitemap.xml via `web_fetch`, then navigate from homepage links | "Site structure from sitemap.xml and manual navigation" |
+| `firecrawl_browser` | `firecrawl_scrape` or `web_fetch` | "Interactive/gated content not accessible" |
 | All web tools | Conversation-only mode | "All findings based on user-supplied evidence" |
 
 **Key rule:** The skill always runs. It produces the best report it can and honestly declares
@@ -322,8 +367,9 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
   "domain": "company.com",
   "stage": "brief",
   "collected_at": "2026-02-26T14:30:00Z",
-  "capabilities_available": ["web_search", "web_fetch", "bash"],
-  "capabilities_unavailable": ["idx_api", "evidence_collector", "firecrawl"],
+  "capabilities_available": ["web_search", "web_fetch", "firecrawl", "bash"],
+  "firecrawl_sub_capabilities": ["firecrawl_scrape", "firecrawl_map", "firecrawl_crawl", "firecrawl_browser"],
+  "capabilities_unavailable": ["idx_api"],
   "scope": {
     "focus": "investor communications",
     "confirmed_at": "2026-02-26T14:28:00Z"
@@ -354,10 +400,33 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
       "tool_used": "bash",
       "accessed_at": "2026-02-26T14:30:30Z",
       "content_summary": "IQ scores: overall 42.3%, IR 38.1%, index median 38.6%"
+    },
+    {
+      "id": "E-004",
+      "type": "document_extraction",
+      "url": "https://www.company.com/investors/cmd-2025.pdf",
+      "document_type": "Capital Markets Day presentation",
+      "tool_used": "firecrawl",
+      "accessed_at": "2026-02-26T14:35:00Z",
+      "pages_extracted": 85,
+      "total_pages": 85,
+      "extraction": "full",
+      "content_summary": "Strategy priorities, medium-term targets, divisional deep dives"
+    },
+    {
+      "id": "E-005",
+      "type": "document_extraction",
+      "url": "https://www.company.com/investors/annual-report-2025.pdf",
+      "document_type": "Annual Report",
+      "tool_used": "firecrawl",
+      "accessed_at": "2026-02-26T14:38:00Z",
+      "pages_extracted": 40,
+      "total_pages": 196,
+      "extraction": "partial",
+      "content_summary": "Chair and CEO statements, strategy section, FY25 KPIs"
     }
   ],
   "evidence_gaps": [
-    "No screenshots captured (evidence_collector unavailable)",
     "IQ scores from offline snapshot, not live API"
   ]
 }
@@ -527,7 +596,6 @@ claim IDs. See `references/CLAIM_SCHEMA.md` for the full claim schema.
     }
   ],
   "limitations": [
-    "No screenshots captured (evidence_collector unavailable)",
     "Situational context limited to web_search snippets"
   ],
   "citations": [
@@ -679,12 +747,103 @@ leadership. Apply the material events checklist before leaving this step:
 If any item is ticked, it must appear in the situational awareness section with date, source
 URL, and relevance to the website assessment. It may also require updating scope or synthesis.
 
-**Step 4 — Website quick audit (web_fetch/evidence_collector):** Assess core page types:
-homepage, about, IR, sustainability, careers, governance. For each: what exists, what's strong,
-what's missing vs Playbook (see `PLAYBOOK_REFERENCE.md`). Check for listed company documents
-(Annual Report, results presentations). On the homepage, note any news, stories, or
-announcements being surfaced — these often signal material recent events that may not yet be
-prominent in search results.
+**Step 4 — Website quick audit:** Assess core page types: homepage, about, IR, sustainability,
+careers, governance. For each: what exists, what's strong, what's missing vs Playbook (see
+`PLAYBOOK_REFERENCE.md`). Check for listed company documents (Annual Report, results
+presentations). On the homepage, note any news, stories, or announcements being surfaced —
+these often signal material recent events that may not yet be prominent in search results.
+
+**Site structure discovery:** If `firecrawl_map` is available, run it first on the company domain
+to get a complete URL inventory. This replaces manual navigation and gives a definitive view of
+the site's information architecture. Use the URL list to identify page types, document URLs
+(PDFs, presentations), and sections to audit.
+
+```json
+firecrawl_map({ "url": "https://www.company.com" })
+```
+
+If `firecrawl_map` is unavailable, fall back to fetching `sitemap.xml` via `web_fetch`, then
+navigate from homepage links.
+
+**Page fetching:** Follow the collection escalation protocol. Start with `web_fetch` (free). If
+a page returns a cookie wall, empty content, or JS-rendered shell, escalate to
+`firecrawl_scrape`. Only use `firecrawl_browser` for pages that require multi-step interaction
+(e.g., accepting investor terms, navigating tabbed interfaces).
+
+**Step 4b — Document extraction (firecrawl — when available).** If `firecrawl` is available and
+PDF document URLs were identified in Step 4 (Annual Report, results presentations, sustainability
+reports), extract key documents using `firecrawl_scrape` with the PDF parser.
+
+Firecrawl automatically parses PDFs into markdown when you scrape a PDF URL — no special
+configuration is needed. Firecrawl also supports Word (.docx), Excel (.xlsx), and RTF documents
+using the same approach.
+
+**Priority order for extraction:**
+1. Capital markets day or investor day presentation — the single richest source of strategy narrative, medium-term targets, and management priorities. Often more candid and forward-looking than the Annual Report. Check the IR section for CMD/investor day materials from the last 18 months.
+2. Latest Annual Report — strategy, KPIs, chair/CEO statements
+3. Latest results presentation — most recent performance narrative
+4. Sustainability/ESG report — if scope includes sustainability
+
+**Document discovery and depth confirmation:** Before extracting any document, do a shallow
+probe first — scrape just the first 5 pages to identify the document:
+
+```json
+{
+  "url": "https://company.com/investors/annual-report-2025.pdf",
+  "parsers": [{ "type": "pdf", "maxPages": 5 }]
+}
+```
+
+From the first 5 pages, identify:
+- Document title and date
+- Table of contents (if present)
+- Total page count (often shown in headers/footers or ToC)
+
+Then present the document list to the consultant for confirmation before extracting further:
+
+```
+## Documents found for extraction
+
+| # | Document | Pages | Credits | Recommended depth |
+|---|----------|-------|---------|-------------------|
+| 1 | Capital Markets Day 2025 | ~85 slides | 85 | Full — primary strategy source |
+| 2 | Annual Report 2025 | ~196 pages | 196 | Partial (first 40) — chair/CEO statement and strategy only |
+| 3 | FY25 Results Presentation | ~42 slides | 42 | Full — recent performance narrative |
+
+Extracting all recommended pages would use ~167 credits.
+Which documents would you like me to extract, and to what depth?
+```
+
+**Wait for confirmation before proceeding.** The consultant may:
+- Approve all recommendations
+- Skip expensive documents (e.g., "skip the Annual Report, just do the CMD deck")
+- Request deeper extraction ("get the full Annual Report")
+- Add documents Mercury didn't suggest
+
+**What to extract:** Do not attempt to summarise the entire document. Focus on:
+- Strategic priorities and medium-term targets (especially from CMD/investor day decks)
+- Chair and CEO statements (strategy narrative, priorities, tone)
+- Key financial metrics and KPIs referenced in the strategy
+- Forward-looking statements and targets
+- Any content that directly relates to the audit scope
+
+For large documents where partial extraction is approved, use `maxPages` to limit:
+
+```json
+{
+  "url": "https://company.com/investors/annual-report-2025.pdf",
+  "parsers": [{ "type": "pdf", "maxPages": 40 }]
+}
+```
+
+**Evidence recording:** Each extracted document is a separate evidence item with type
+`document_extraction`, the PDF URL, pages extracted, total page count, and a content summary.
+This evidence can support `[FACT]` claims with `certainty: confirmed` and `method: firecrawl`.
+If only partial extraction was performed, record that in the evidence item and note it as a
+limitation.
+
+If `firecrawl` is unavailable, skip this step. Note document URLs in evidence gaps and annotate:
+"Document content not extracted — Firecrawl unavailable."
 
 **Step 5 — Client check (idx_api only):** If confirmed IDX client: GA4 trends, Leadfeeder data,
 engagement metrics. If prospect or API unavailable: skip, note as prospect.
@@ -865,7 +1024,7 @@ peer evidence. If missing, prompt consultant. Do not silently trigger.
 ### Collection phase steps
 
 **Step 1 — Current structure:** Extract current IA from stage 1/2 artefacts. If no prior stages,
-fetch fresh via web_fetch/evidence_collector.
+fetch fresh via `web_fetch` or `firecrawl_map`.
 
 **Step 2 — Supplementary evidence:** Only if prior stages are missing. Fetch current site
 structure and peer structures.
