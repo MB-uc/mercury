@@ -222,7 +222,7 @@ bash scripts/build-pipeline.sh docx output.docx
 bash scripts/build-pipeline.sh pptx output.pptx
 ```
 
-The pipeline validates the file, converts to PDF, extracts page images, and reports the page count. For .docx it uses the docx skill's `validate.py`; for .pptx it uses LibreOffice conversion.
+The pipeline validates the file, converts to PDF, extracts page images, and reports the page count. For .docx it validates with `python-docx` (inline); for .pptx it uses LibreOffice conversion.
 
 Always visually verify at least the cover page, first content page, and a table page by reading the generated JPG images.
 
@@ -317,4 +317,4 @@ The skill includes IDX logos in `assets/logos/`:
 - PageBreak must be inside a Paragraph
 - Tables need dual widths (columnWidths array AND cell width)
 - Table width must equal sum of columnWidths
-- For the docx validation script path, check the docx skill at the standard location
+- For docx validation, the build pipeline uses `python-docx` inline (no external dependency needed)

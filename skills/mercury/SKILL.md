@@ -26,7 +26,9 @@ markdown report. An integrated Word document is offered at the end.
 - `SITE_CONFIGS.md` — Firecrawl domain overrides
 
 **Data files** (in `data/`):
-- `benchmarks.json` — Offline snapshot of top 200 companies plus index medians
+- `benchmarks/lenses.json` — Audit lens definitions (health, investors, ESG, etc.)
+- `benchmarks/page-archetypes.json` — Expected components per page type (core + enhanced)
+- `benchmarks/example-check-rr-investors.json` — Example archetype check output
 
 ---
 
@@ -185,7 +187,7 @@ not have — even if you "know" the answer from training data.
 | Structural claims (quantitative) | `web_fetch` or `firecrawl` | Qualitative only from search snippets |
 | Site structure mapping | `firecrawl_map` or `web_fetch` + manual navigation | Partial structure from homepage navigation only |
 | Visual/UX claims | `firecrawl_browser` (screenshots) | Prohibited entirely |
-| Benchmark scores (specific) | `idx_api` or offline `benchmarks.json` | Estimated band only |
+| Benchmark scores (specific) | `idx_api` or offline benchmark data | Estimated band only |
 | Situational claims | `web_search` | Prohibited — no situational section |
 | Client analytics | `idx_api` with client confirmation | Prohibited — treated as prospect |
 | Document presence | `web_fetch` or `web_search` | Only if URL found in search results |
@@ -196,7 +198,7 @@ not have — even if you "know" the answer from training data.
 
 | Missing tool | Fallback | Report annotation |
 |-------------|----------|-------------------|
-| `idx_api` | Use `data/benchmarks.json` | "Using offline benchmark data from [date]" |
+| `idx_api` | Use `data/benchmarks/page-archetypes.json` and `data/benchmarks/lenses.json` | "Using offline benchmark data from [date]" |
 | `idx_api` (client check) | Skip; treat as prospect | "Client status could not be verified" |
 | `idx_api` (case studies) | Omit section | "Case study matching unavailable" |
 | `web_search` | Skip situational awareness | "Situational context unavailable" |
@@ -396,7 +398,7 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
     {
       "id": "E-003",
       "type": "benchmark_data",
-      "source": "benchmarks.json (offline snapshot)",
+      "source": "data/benchmarks/ (offline snapshot)",
       "tool_used": "bash",
       "accessed_at": "2026-02-26T14:30:30Z",
       "content_summary": "IQ scores: overall 42.3%, IR 38.1%, index median 38.6%"
@@ -717,7 +719,7 @@ opportunity.
 detect subdomains. Lock scope.
 
 **Step 2 — Benchmark check (deterministic):** Fetch IQ scores from `idx_api` or
-`data/benchmarks.json`. Fetch index medians for context. If in dataset: rank, percentile,
+`data/benchmarks/page-archetypes.json` and `data/benchmarks/lenses.json`. Fetch index medians for context. If in dataset: rank, percentile,
 category breakdown. If not: estimate band from sector/index medians.
 
 **Step 3 — Situational awareness (web_search + web_fetch):** Two mandatory sub-steps:
