@@ -12,7 +12,7 @@ Produces branded documents from structured Mercury audit data. Supports three ou
 Before using any mercury-render scripts, install the required npm packages. Run this at the start of every session — it takes a few seconds and is safe to re-run:
 
 ```bash
-npm install docx pptxgenjs
+npm install docx pptxgenjs exceljs
 ```
 
 These are the only dependencies. Both are pure JavaScript with no native bindings. The scripts also use Node built-ins (fs, path) which need no installation.
@@ -311,7 +311,7 @@ The skill includes IDX logos in `assets/logos/`:
 
 ## Important notes
 
-- **FIRST**: Run `npm install docx pptxgenjs` before using any scripts (see Setup section above)
+- **FIRST**: Run `npm install docx pptxgenjs exceljs` before using any scripts (see Setup section above)
 - Always use `ShadingType.CLEAR` for table fills, never `SOLID`
 - Never use unicode bullet characters — use `LevelFormat.BULLET` via numbering config
 - PageBreak must be inside a Paragraph

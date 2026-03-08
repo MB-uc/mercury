@@ -1026,45 +1026,193 @@ peer evidence. If missing, prompt consultant. Do not silently trigger.
 **Step 1 — Current structure:** Extract current IA from stage 1/2 artefacts. If no prior stages,
 fetch fresh via `web_fetch` or `firecrawl_map`.
 
-**Step 2 — Supplementary evidence:** Only if prior stages are missing. Fetch current site
+If `firecrawl_map` is available, run it on the company domain to get a complete URL inventory.
+This gives a definitive view of all discoverable pages and their hierarchy.
+
+**Step 2 — Per-page SEO and AEO audit:** For each page in the current structure (or at minimum
+the key page types), collect:
+
+- **URL / slug** — the actual path
+- **Page title** (`<title>` tag)
+- **Meta description** — present, absent, or generic
+- **H1** — present, matches page purpose, or missing/generic
+- **Structured data** — Schema.org markup types found (Organization, WebPage, FAQPage,
+  BreadcrumbList, Article, etc.) and whether they are valid
+- **Open Graph / social tags** — present and populated, or missing
+- **Canonical URL** — present and correct, or missing/misconfigured
+- **Content assessment** — brief note on content quality and completeness
+
+For AEO (Answer Engine Optimisation) readiness, also check:
+- **FAQ sections** — structured Q&A content that can be surfaced by AI assistants
+- **Clear entity definitions** — does the page clearly define what the company/product/service is
+  in a way that AI models can extract?
+- **Topical authority signals** — depth of content on the page's topic, internal linking to
+  related content
+
+Use `web_fetch` for basic HTML inspection. Escalate to `firecrawl_scrape` if pages are
+JS-rendered or behind cookie walls. This data feeds directly into the Excel output.
+
+**Step 3 — Supplementary evidence:** Only if prior stages are missing. Fetch current site
 structure and peer structures.
 
-**Step 3 — Save evidence manifest.**
+**Step 4 — Save evidence manifest.**
 
 ### Reasoning phase steps
 
-**Step 4 — Recommended structure:** Three sources: Playbook best practice
+**Step 5 — Recommended structure:** Three sources: Playbook best practice
 (`PLAYBOOK_REFERENCE.md`), top peer structures (from stage 2 artefact), IDX sector knowledge.
 Every new section or page must be justified by at least one source. No "best practice says"
 without a specific reference.
 
-**Step 5 — Change rationale:** For every structural change: what is moving, why, which peer does
+For each recommended page, specify:
+- **Recommended slug** — the proposed URL path
+- **Page purpose** — what this page should achieve
+- **Content notes** — what content should appear on the page
+- **SEO notes** — recommended title tag, H1, Schema.org markup, and any specific SEO
+  considerations (e.g., "add FAQPage schema for the investment case page")
+- **AEO notes** — how the page should be structured for AI readability (e.g., "include a
+  clear company definition paragraph", "add structured FAQ section")
+- **Change type** — `new`, `restructured`, `merged`, `renamed`, `unchanged`
+- **Source** — which Playbook criterion, peer URL, or IDX knowledge justifies this page
+
+**Step 6 — Change rationale:** For every structural change: what is moving, why, which peer does
 it well, which Playbook criteria it addresses.
 
-**Step 6 — Priority tiers:** Foundational (fix first), Enhancement (next phase), Aspirational
+**Step 7 — Priority tiers:** Foundational (fix first), Enhancement (next phase), Aspirational
 (longer term).
 
-**Step 7 — Service mapping:** Each recommended change mapped to the IDX service that delivers it.
+**Step 8 — Service mapping:** Each recommended change mapped to the IDX service that delivers it.
 
 RE-READ THE CLAIM CLASSIFICATION RULES ABOVE BEFORE PROCEEDING.
 
-**Steps 8–10:** Compile artefact, render markdown, compliance self-check.
+**Steps 9–11:** Compile artefact, render markdown, compliance self-check.
+
+**Step 12 — Generate Excel sitemap.** After the artefact is compiled and validated, generate
+an Excel file with two sheets:
+
+#### Sheet 1: Current Structure
+
+| Column | Content |
+|--------|---------|
+| Level 1 | Top-level section (e.g., "About", "Investors", "Sustainability") |
+| Level 2 | Sub-section |
+| Level 3 | Page |
+| Level 4 | Sub-page (if applicable) |
+| URL | Full URL of the page |
+| Slug | Path component only (e.g., `/investors/results`) |
+| Page title | `<title>` tag content |
+| H1 | Main heading on the page |
+| Meta description | Present / absent / generic |
+| Schema.org markup | Types found (e.g., "Organization, BreadcrumbList") or "None" |
+| OG tags | Present / absent |
+| Canonical | Correct / missing / misconfigured |
+| AEO readiness | Brief assessment: entity definition, FAQ content, AI-parseable structure |
+| Content notes | Brief note on content quality and completeness |
+
+#### Sheet 2: Recommended Structure
+
+| Column | Content |
+|--------|---------|
+| Level 1 | Top-level section |
+| Level 2 | Sub-section |
+| Level 3 | Page |
+| Level 4 | Sub-page (if applicable) |
+| Recommended slug | Proposed URL path |
+| Change type | `new` / `restructured` / `merged` / `renamed` / `unchanged` |
+| Page purpose | What this page should achieve |
+| Content notes | What content should appear |
+| SEO notes | Title tag, H1, Schema.org markup recommendations |
+| AEO notes | AI readability recommendations (entity definitions, FAQ structure, etc.) |
+| Priority | Foundational / Enhancement / Aspirational |
+| Source | Playbook criterion ID, peer URL, or IDX knowledge |
+| IDX service | Which IDX service delivers this change |
+
+Generate the Excel file using the `exceljs` npm package:
+
+```bash
+npm install exceljs  # add to session setup if not already installed
+```
+
+```javascript
+const ExcelJS = require('exceljs');
+const workbook = new ExcelJS.Workbook();
+
+// Sheet 1: Current Structure
+const current = workbook.addWorksheet('Current Structure');
+current.columns = [
+  { header: 'Level 1', key: 'l1', width: 20 },
+  { header: 'Level 2', key: 'l2', width: 20 },
+  { header: 'Level 3', key: 'l3', width: 25 },
+  { header: 'Level 4', key: 'l4', width: 25 },
+  { header: 'URL', key: 'url', width: 40 },
+  { header: 'Slug', key: 'slug', width: 25 },
+  { header: 'Page Title', key: 'title', width: 35 },
+  { header: 'H1', key: 'h1', width: 30 },
+  { header: 'Meta Description', key: 'meta', width: 15 },
+  { header: 'Schema.org', key: 'schema', width: 25 },
+  { header: 'OG Tags', key: 'og', width: 12 },
+  { header: 'Canonical', key: 'canonical', width: 15 },
+  { header: 'AEO Readiness', key: 'aeo', width: 30 },
+  { header: 'Content Notes', key: 'content', width: 40 }
+];
+// Style header row
+current.getRow(1).font = { bold: true };
+current.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF12061A' } };
+current.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+// Add data rows from artefact...
+
+// Sheet 2: Recommended Structure
+const recommended = workbook.addWorksheet('Recommended Structure');
+recommended.columns = [
+  { header: 'Level 1', key: 'l1', width: 20 },
+  { header: 'Level 2', key: 'l2', width: 20 },
+  { header: 'Level 3', key: 'l3', width: 25 },
+  { header: 'Level 4', key: 'l4', width: 25 },
+  { header: 'Recommended Slug', key: 'slug', width: 25 },
+  { header: 'Change Type', key: 'change', width: 15 },
+  { header: 'Page Purpose', key: 'purpose', width: 35 },
+  { header: 'Content Notes', key: 'content', width: 40 },
+  { header: 'SEO Notes', key: 'seo', width: 40 },
+  { header: 'AEO Notes', key: 'aeo', width: 40 },
+  { header: 'Priority', key: 'priority', width: 15 },
+  { header: 'Source', key: 'source', width: 30 },
+  { header: 'IDX Service', key: 'service', width: 25 }
+];
+recommended.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF12061A' } };
+recommended.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+// Add data rows from artefact...
+
+await workbook.xlsx.writeFile('{company}-sitemap.xlsx');
+```
 
 ### Stage-specific report sections
 
 ```
 ## Current structure
-{existing IA as nested list — descriptive, not evaluative}
+{existing IA as hierarchical list with URLs — descriptive, not evaluative}
+
+---
+
+## SEO and AEO assessment
+{per-page summary of current SEO health and AEO readiness. Flag pages with missing
+meta descriptions, absent Schema.org markup, or poor AI-parseable structure.}
 
 ---
 
 ## Recommended structure
-{proposed IA as nested list, with change annotations}
+{proposed IA as hierarchical list, with change annotations and recommended slugs}
 
 ---
 
 ## Change rationale
 {per-change: what, why, peer evidence [URL], Playbook reference [criteria ID]}
+
+---
+
+## SEO and AEO recommendations
+{structural SEO recommendations: Schema.org markup strategy, URL structure, internal
+linking. AEO recommendations: entity definition strategy, FAQ content, AI-readable
+page structures.}
 
 ---
 
@@ -1090,6 +1238,7 @@ RE-READ THE CLAIM CLASSIFICATION RULES ABOVE BEFORE PROCEEDING.
 - `{company}-sitemap-evidence.json`
 - `{company}-sitemap-artefact.json`
 - `{company}-sitemap.md`
+- `{company}-sitemap.xlsx` — two-sheet Excel workbook (Current Structure + Recommended Structure)
 
 ---
 

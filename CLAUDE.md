@@ -54,5 +54,5 @@ Mercury enforces a strict governance protocol. Key components:
 
 For document rendering, install dependencies once per session:
 ```bash
-npm install docx pptxgenjs
+npm install docx pptxgenjs exceljs
 ```
