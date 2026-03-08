@@ -51,11 +51,11 @@ Mercury uses the same tools available to any Claude session:
 | Firecrawl scrape | Reads pages that resist normal fetching (cookie walls, JS rendering) and extracts content from PDFs, Word docs, and Excel files | Public websites | 1 credit per page |
 | Firecrawl map | Discovers all URLs on a company's domain | Public websites | 1 credit |
 | Firecrawl browser | Interactive browser for gated content (e.g., IR sections requiring terms acceptance) | Public websites | 1+ credits |
-| IDX benchmarks (BigQuery) | Looks up Connect.IQ scores for 747 companies across FTSE 100, FTSE 250, S&P 500, and STOXX 50 | IDX's benchmark database | Free |
+| IDX benchmarks | Looks up Connect.IQ scores for 747 companies across FTSE 100, FTSE 250, S&P 500, and STOXX 50 | IDX's benchmark database | Free |
 
 Mercury uses tools in cost order — free tools first, then paid tools only when needed. It will always try `web_fetch` before escalating to Firecrawl. For document extraction (PDFs), it asks you before extracting so you control the credit spend.
 
-Mercury does not access internal systems, client databases, email, CRM, or anything behind a login. It works with publicly available information plus IDX's Connect.IQ benchmark data (accessed via BigQuery).
+Mercury does not access internal systems, client databases, email, CRM, or anything behind a login. It works with publicly available information plus IDX's Connect.IQ benchmark data.
 
 ### What Mercury stores
 
@@ -93,7 +93,7 @@ Mercury is thorough within its declared scope, and honest about its limits.
 **What it acknowledges it can't do:**
 - Visual and UX assessment (unless Firecrawl browser screenshots are available)
 - Content behind logins requiring credentials Mercury doesn't have
-- Internal client analytics (GA4, Leadfeeder) — not currently connected
+- Internal client analytics (GA4, Leadfeeder)
 - Exhaustive content analysis of very large documents (it asks you how deep to go)
 
 Every report includes a **Limitations section** that lists exactly what couldn't be assessed and why. Every report includes a **Capability declaration** that shows which tools were available. These are not buried — they're prominent sections of every report.
@@ -127,4 +127,4 @@ Mercury's classification system exists precisely to prevent this. Facts are cite
 Yes, but with less data. There are no IQ benchmark scores for unlisted companies, and there may be less news coverage. Mercury adjusts — it uses whatever evidence is available and clearly states what's missing.
 
 **"Can I run it on a company we're already working with?"**
-Yes. Mercury treats all companies the same way — it uses public data plus IDX benchmark scores from BigQuery. Client analytics (GA4, Leadfeeder) are not currently connected.
+Yes. Mercury treats all companies the same way — it uses public data plus IDX benchmark scores. It does not distinguish between prospects and existing clients.

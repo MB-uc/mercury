@@ -908,8 +908,7 @@ limitation.
 If `firecrawl` is unavailable, skip this step. Note document URLs in evidence gaps and annotate:
 "Document content not extracted — Firecrawl unavailable."
 
-**Step 5 — Client check:** Client analytics (GA4, Leadfeeder) are not currently available via
-BigQuery. Treat all companies as prospects. Note as: "Client analytics not available."
+**Step 5 — Client check:** Skip. Mercury treats all companies as prospects.
 
 **Step 6 — Save evidence manifest.**
 

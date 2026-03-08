@@ -149,12 +149,12 @@ At the top of every report you'll see a table showing which tools Mercury had ac
 | `web_search` | Recent news, situational awareness |
 | `web_fetch` | Direct page content retrieval (free, no credits) |
 | `firecrawl` | Site mapping, PDF/document extraction, browser sandbox for gated content |
-| `bigquery` | Official Connect.IQ scores for 747 companies (FTSE 100, FTSE 250, S&P 500, STOXX 50) |
+| `idx_benchmarks` | Official Connect.IQ scores for 747 companies (FTSE 100, FTSE 250, S&P 500, STOXX 50) |
 | `bash` | File operations |
 
 Mercury uses tools in cost order — free tools first (`web_fetch`), then paid tools (`firecrawl`) only when the free tool fails or the content requires it (e.g., PDFs, cookie walls, JavaScript-rendered pages).
 
-If BigQuery is available, Mercury fetches actual IQ scores — these appear as `[FACT]` in reports. If BigQuery is unavailable or the company isn't in the dataset, Mercury estimates scores from observable criteria — these appear as `[INFERENCE]`. Mercury honestly declares which path it used in the Limitations section.
+When the IDX benchmark database is available, Mercury fetches actual IQ scores — these appear as `[FACT]` in reports. If the database is unavailable or the company isn't in the dataset, Mercury estimates scores from observable criteria — these appear as `[INFERENCE]`. Mercury honestly declares which path it used in the Limitations section.
 
 ### Document extraction
 
