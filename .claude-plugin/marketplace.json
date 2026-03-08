@@ -16,7 +16,8 @@
         "name": "IDX"
       },
       "source": ".",
-      "category": "consulting"
+      "category": "consulting",
+      "strict": false
     }
   ]
 }
