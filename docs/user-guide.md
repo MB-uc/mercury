@@ -242,7 +242,8 @@ The best way to prevent wandering is to:
 3. **Add a focus area when relevant** — narrowing scope produces deeper analysis
 4. **Review the peer set carefully** — the competitive landscape is only as good as the comparators
 5. **Read the Limitations section** — it tells you exactly what Mercury couldn't assess and why
-6. **Use the Word document for clients** — run `/mercury:mercury-render` after the pipeline to produce branded deliverables
+6. **Add your own evidence at any point** — paste a URL, a quote, a correction, or context (e.g. "they just announced a merger") and Mercury will incorporate it into the analysis with full traceability
+7. **Use the Word document for clients** — run `/mercury:mercury-render` after the pipeline to produce branded deliverables
 
 ---
 

@@ -244,6 +244,45 @@ no classification weight, no severity, and no recommendation.
 
 ---
 
+## Consultant-supplied evidence
+
+At any point during a Mercury run, the consultant can provide additional evidence. This
+evidence is treated with the same rigour as tool-gathered evidence — it enters the evidence
+manifest, supports claims, and carries full traceability.
+
+### What a consultant can supply
+
+| Input | How to handle | Evidence type |
+|-------|--------------|---------------|
+| A URL | Fetch it (via `web_fetch` or `firecrawl_scrape`) and add to evidence manifest | `web_page` |
+| Pasted text or a quote | Add as evidence with `source: "consultant-supplied"` | `consultant_supplied` |
+| A correction ("that's wrong, it's actually X") | Update the relevant claim, re-classify if needed, note the override | `manual_override` |
+| A document or file path | Read or extract it and add to evidence manifest | `document_extraction` |
+| A screenshot | Read it and add visual observations to evidence | `consultant_supplied` |
+| Context ("they just acquired company Y") | Add as situational evidence, use for `[FACT]` if verifiable or `[INFERENCE]` if not | `consultant_supplied` |
+
+### Evidence manifest entry
+
+```json
+{
+  "id": "E-CST-001",
+  "type": "consultant_supplied",
+  "source": "Consultant provided during stage 1",
+  "content_summary": "Confirmed that IR section was redesigned in January 2026",
+  "supplied_at": "2026-03-08T10:15:00Z"
+}
+```
+
+### Rules
+
+1. Consultant-supplied evidence uses the `manual_override` method in claims
+2. It carries the same citation requirements as any other evidence — add it to the citation register
+3. If it contradicts tool-gathered evidence, note both and flag the discrepancy
+4. If it corrects a factual error, update the claim and add a `supersedes` reference
+5. Do not prompt the consultant for evidence — accept it when offered
+
+---
+
 ## Claim classification rules
 
 These rules apply to every stage, every finding, every paragraph. They are the most important
@@ -443,6 +482,13 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
       "total_pages": 196,
       "extraction": "partial",
       "content_summary": "Chair and CEO statements, strategy section, FY25 KPIs"
+    },
+    {
+      "id": "E-CST-001",
+      "type": "consultant_supplied",
+      "source": "Consultant provided during stage 1",
+      "supplied_at": "2026-02-26T14:45:00Z",
+      "content_summary": "Confirmed IR section redesigned in Jan 2026; old pages still cached"
     }
   ],
   "evidence_gaps": [

@@ -121,7 +121,7 @@ For each evidence item:
   2. Validate required fields (claim_id, entity, domain, stage, statement, claim_type, scope, certainty, method, created_at)
   3. Validate certainty ∈ {confirmed, observed, inferred, not_assessed}
   4. Validate claim_type ∈ {fact, inference, gap, recommendation_support, judgement_support}
-  5. Validate method ∈ {web_fetch, web_search, benchmark_snapshot, prior_stage_artefact, manual_override}
+  5. Validate method ∈ {web_fetch, web_search, bigquery, benchmark_estimation, prior_stage_artefact, manual_override}
   6. Validate evidence linkage (evidence_ids required unless method = prior_stage_artefact)
   7. Run scope inflation check (Rule 2)
   8. Run negative claim boundary check (Rule 3)
