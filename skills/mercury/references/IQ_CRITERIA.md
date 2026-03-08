@@ -2,7 +2,7 @@
 
 Source: Connect.IQ 2024 dataset (747 companies across FTSE 100, FTSE 250, S&P 500, STOXX 50)
 Framework owner: IDX
-Total criteria: 356 binary (present/not present) evaluations
+Total criteria: 356 in BigQuery dataset (this reference documents 320 — criteria 2–321)
 Live data: `sector_intelligence.iq_benchmarks` and `sector_intelligence.iq_criteria_detail` in BigQuery
 
 This reference structures the Connect.IQ criteria for use during site analysis. Each criterion is binary: the element is either present (1) or absent (0) on the site. When BigQuery is available, actual scores and criteria detail are fetched directly. During crawl-based estimation (when BigQuery is unavailable), focus on criteria that are **observable from page content** — skip criteria requiring external tools (SEO metrics, social media stats) unless you have access to that data.

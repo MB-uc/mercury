@@ -1,7 +1,7 @@
 {
   "_note": "IQ score estimation model. When BigQuery is unavailable, Mercury estimates IQ scores by evaluating observable criteria from IQ_CRITERIA.md against page evidence. This produces an ESTIMATED score — always label it as such.",
   "version": "1.0.0",
-  "methodology": "Count observable binary criteria (present/absent) per category, compute category percentages, apply category weights to derive an estimated overall score. Only criteria observable from a crawl are counted — unobservable criteria (SEO metrics, paid search, social engagement, speed scores) are excluded and the weight is redistributed.",
+  "methodology": "Count observable binary criteria (present/absent) per category, compute category percentages, apply category weights to derive an estimated overall score. This model covers 320 of the 356 BigQuery criteria (criteria 2-321). Only criteria observable from a crawl are counted — unobservable criteria (SEO metrics, paid search, social engagement, speed scores) are excluded and the weight is redistributed.",
 
   "index_reference": {
     "_note": "Static fallback stats from BigQuery (2024 dataset). When BigQuery is available, query live stats instead.",
@@ -108,7 +108,7 @@
     "step_1": "For each category with observable_criteria > 0, count how many criteria are present (1) vs absent (0) based on page evidence.",
     "step_2": "Compute category_score = (criteria_present / observable_criteria) * 100 for each category.",
     "step_3": "Compute weighted_overall = sum of (category_score * weight) for all categories where weight > 0.",
-    "step_4": "Compare weighted_overall to ftse250_reference to determine estimated band and percentile range.",
+    "step_4": "Look up the company's index in index_reference. Compare weighted_overall to that index's P25, median, and P75 to determine estimated band and percentile range.",
     "step_5": "Report as ESTIMATED IQ score with confidence interval based on unobservable criteria coverage."
   },
 
@@ -144,7 +144,7 @@
   "reporting_rules": [
     "ALWAYS label estimated scores with [INFERENCE — estimated from observable criteria]",
     "NEVER present an estimated score as equivalent to an official Connect.IQ score",
-    "State how many of the 356 criteria were assessable and how many were actually assessed",
+    "State how many of the 320 criteria (in this model) were assessable and how many were actually assessed. Note: the full BigQuery dataset uses 356 criteria — 36 are not covered by this estimation model.",
     "State which categories were excluded (SEO, Paid Search) and why",
     "Compare to the relevant index median (not just FTSE 250) and show the positioning band",
     "If company IS in the 747-company dataset, note that actual scores are available via BigQuery",
