@@ -123,8 +123,20 @@ When `firecrawl` is available, also check which sub-capabilities are present:
 |----------------|--------------|--------------|
 | `firecrawl_scrape` | Scrape a test URL | Page scraping with cookie handling, PDF/DOCX/XLSX extraction |
 | `firecrawl_map` | Map a test domain | Full URL discovery across a domain (returns all discoverable URLs) |
-| `firecrawl_crawl` | Check if crawl endpoint responds | Multi-page crawling with depth control |
 | `firecrawl_browser_*` | Check if `firecrawl_browser_create` responds | Interactive browser sessions for JS-rendered or gated content |
+
+### ⚠️ PROHIBITED: `firecrawl_crawl`
+
+**NEVER use `firecrawl_crawl`.** The crawl endpoint spiders an entire site, following every
+link it discovers. Each page crawled costs 1 credit. On large corporate sites this can burn
+hundreds or thousands of credits in a single call — a site with 500 pages costs 500 credits.
+
+Mercury's architecture does not need crawl. The correct pattern is:
+1. **`firecrawl_map`** (1 credit) — discover all URLs on the domain
+2. **`firecrawl_scrape`** (1 credit each) — fetch only the specific pages needed
+
+This gives you full URL discovery plus targeted content extraction at a fraction of the cost.
+If you find yourself wanting to crawl, use `map` + selective `scrape` instead.
 
 ### Collection escalation protocol
 
@@ -132,9 +144,13 @@ Mercury uses tools in cost order. Start free, escalate only when the cheaper too
 
 ```
 Level 0: web_fetch          — free, try first for any HTML page
-Level 1: firecrawl_scrape   — 1 credit, use when web_fetch fails (cookie walls, JS rendering, PDFs)
-Level 2: firecrawl_browser  — 1+ credits, use when scrape fails (multi-step interaction, gated IR sections)
+Level 1: firecrawl_scrape   — 1 credit per page, use when web_fetch fails
+Level 2: firecrawl_browser  — 1+ credits, use when scrape fails (gated content)
 ```
+
+**Credit budget:** A typical Mercury briefing should use 1 credit for `firecrawl_map` plus
+10-30 credits for selective `firecrawl_scrape` calls. If you are approaching 50+ scrape calls
+in a single stage, pause and reconsider — you are likely scraping pages that aren't needed.
 
 **Escalation triggers:**
 - `web_fetch` returns a cookie consent page, empty content, or a redirect loop → escalate to `firecrawl_scrape`
@@ -146,6 +162,7 @@ Level 2: firecrawl_browser  — 1+ credits, use when scrape fails (multi-step in
 - `web_fetch` succeeds with clean content — no need to spend credits
 - The content is behind a login requiring credentials Mercury doesn't have — note as a gap
 - Credits are exhausted — note as a limitation, do not retry
+- A page has already been fetched — do not re-scrape pages you already have
 
 ### Capability manifest
 
@@ -172,7 +189,7 @@ When firecrawl is available, also log sub-capabilities:
 |------|--------|
 | firecrawl_scrape | ✓ Available |
 | firecrawl_map | ✓ Available |
-| firecrawl_crawl | ✓ Available |
+| firecrawl_crawl | ✗ PROHIBITED — never use (see §Collection escalation protocol) |
 | firecrawl_browser | ✓ Available |
 ```
 
@@ -370,7 +387,7 @@ Saved as `{company}-{stage}-evidence.json` at the end of the collection phase.
   "stage": "brief",
   "collected_at": "2026-02-26T14:30:00Z",
   "capabilities_available": ["web_search", "web_fetch", "firecrawl", "bash"],
-  "firecrawl_sub_capabilities": ["firecrawl_scrape", "firecrawl_map", "firecrawl_crawl", "firecrawl_browser"],
+  "firecrawl_sub_capabilities": ["firecrawl_scrape", "firecrawl_map", "firecrawl_browser"],
   "capabilities_available_data": ["bigquery"],
   "scope": {
     "focus": "investor communications",
@@ -816,14 +833,20 @@ careers, governance. For each: what exists, what's strong, what's missing vs Pla
 presentations). On the homepage, note any news, stories, or announcements being surfaced —
 these often signal material recent events that may not yet be prominent in search results.
 
-**Site structure discovery:** If `firecrawl_map` is available, run it first on the company domain
-to get a complete URL inventory. This replaces manual navigation and gives a definitive view of
-the site's information architecture. Use the URL list to identify page types, document URLs
-(PDFs, presentations), and sections to audit.
+**Site structure discovery:** If `firecrawl_map` is available, run it on the company's primary
+corporate domain only (e.g. `www.company.com`). This gives a complete URL inventory for that
+domain. Use the URL list to identify page types, document URLs (PDFs, presentations), and
+sections to audit.
 
 ```json
 firecrawl_map({ "url": "https://www.company.com" })
 ```
+
+**Subdomain restriction:** Do NOT map or scrape regional/country subdomains (e.g.
+`chile.company.com`, `australia.company.com`, `brasil.company.com`) unless the consultant
+specifically asks for them. Mercury audits the corporate website, not the entire global web
+estate. Regional sites are out of scope by default. If the primary domain redirects to a
+regional site, follow the redirect but do not spider other regions.
 
 If `firecrawl_map` is unavailable, fall back to fetching `sitemap.xml` via `web_fetch`, then
 navigate from homepage links.
