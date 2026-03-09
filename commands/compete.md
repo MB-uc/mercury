@@ -1,3 +1,8 @@
+---
+description: Run stage 2 — competitive landscape comparing the client to sector peers
+argument-hint: "<company name>"
+---
+
 # /mercury:compete
 
 Run stage 2 — competitive landscape for the specified company.

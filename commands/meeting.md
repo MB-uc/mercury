@@ -1,3 +1,8 @@
+---
+description: Run stage 4 — meeting pack with agenda, pre-read, and facilitator guide
+argument-hint: "<company name>"
+---
+
 # /mercury:meeting
 
 Run stage 4 — meeting pack for the specified company.

@@ -1,3 +1,8 @@
+---
+description: Run stage 3 — sitemap recommendation grounded in Playbook and peer evidence
+argument-hint: "<company name>"
+---
+
 # /mercury:sitemap
 
 Run stage 3 — sitemap recommendation for the specified company.

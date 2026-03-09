@@ -1,3 +1,8 @@
+---
+description: Run the full Mercury pipeline — briefing, competitive landscape, sitemap, and meeting pack
+argument-hint: "<company name>"
+---
+
 # /mercury:all
 
 Run the full Mercury pipeline for the specified company.

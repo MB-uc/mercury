@@ -1,3 +1,8 @@
+---
+description: Run stage 1 — consultant briefing with benchmarks, website audit, and gap analysis
+argument-hint: "<company name>"
+---
+
 # /mercury:brief
 
 Run stage 1 — consultant briefing for the specified company.
