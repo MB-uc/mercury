@@ -6,10 +6,7 @@
   "plugins": [
     {
       "name": "mercury",
-      "source": {
-        "source": "github",
-        "repo": "MB-uc/mercury"
-      },
+      "source": ".",
       "description": "Mercury v3 — IDX consultant engagement preparation"
     }
   ]
