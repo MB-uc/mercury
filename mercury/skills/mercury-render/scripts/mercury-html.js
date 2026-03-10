@@ -262,7 +262,8 @@ function renderPeerComparison(data) {
 function renderTreemap(data) {
   if (!data.sitemapData) return "";
 
-  const treeJson = JSON.stringify(data.sitemapData);
+  // Escape </script> sequences to prevent XSS breakout
+  const treeJson = JSON.stringify(data.sitemapData).replace(/<\//g, "<\\/");
 
   return `
   <section id="sitemap" class="content-section fade-in">
@@ -292,19 +293,19 @@ function renderTreemap(data) {
         .attr('width', '100%');
 
       const sectionColors = {
-        "About Us":        "#FF006F",
-        "What We Do":      "#00FFC9",
-        "Investors":       "#0068FF",
-        "Sustainability":  "#EEFF00",
-        "Media":           "#FF6500",
-        "Careers":         "#00FF00",
+        "About Us":        "${COLORS.ROSE}",
+        "What We Do":      "${COLORS.AQUAMARINE}",
+        "Investors":       "${COLORS.BLUE}",
+        "Sustainability":  "${COLORS.LEMON_LIME}",
+        "Media":           "${COLORS.ORANGE}",
+        "Careers":         "${COLORS.GREEN}",
       };
 
       function getColor(d) {
         let node = d;
-        while (node.depth > 1) node = node.parent;
+        while (node.depth > 1 && node.parent) node = node.parent;
         const name = node.data.name || '';
-        return sectionColors[name] || '#666666';
+        return sectionColors[name] || '${COLORS.MEDIUM}';
       }
 
       const leaf = svg.selectAll('g')
@@ -328,8 +329,8 @@ function renderTreemap(data) {
           return w > 60 ? name : (w > 30 ? name.substring(0, 3) : '');
         })
         .attr('font-size', '10px')
-        .attr('font-family', "'IDX Sans', Arial, sans-serif")
-        .attr('fill', '#12061A')
+        .attr('font-family', ${JSON.stringify(FONTS.HEADING)})
+        .attr('fill', '${COLORS.LICORICE}')
         .attr('opacity', 0.9);
 
       // Section labels on parent groups
@@ -342,8 +343,8 @@ function renderTreemap(data) {
         .text(d => d.data.name)
         .attr('font-size', '12px')
         .attr('font-weight', 'bold')
-        .attr('font-family', "'IDX Sans', Arial, sans-serif")
-        .attr('fill', '#F7F6EE');
+        .attr('font-family', ${JSON.stringify(FONTS.HEADING)})
+        .attr('fill', '${COLORS.FLORAL_WHITE}');
     })();
     </script>
   </section>`;
@@ -361,7 +362,7 @@ function renderPagesAnalysed(data) {
   <section id="pages-analysed" class="content-section fade-in">
     <h2>Pages analysed</h2>
     <table class="data-table">
-      <thead><tr><th>Page type</th><th>URL</th><th>Assessment</th></tr></thead>
+      <thead><tr><th>URL</th><th>Type</th><th>Claims</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </section>`;
@@ -532,18 +533,18 @@ body {
   display: flex; align-items: center; z-index: 100;
   padding: 0 1.5rem; gap: 1.5rem;
 }
-.nav-brand { padding: 0; border-bottom: none; flex-shrink: 0; display: flex; align-items: center; gap: 0.5rem; }
+.nav-brand { padding: 0; flex-shrink: 0; display: flex; align-items: center; gap: 0.5rem; }
 .nav-logo { height: 16px; opacity: 1; }
 .nav-mercury { font-family: ${FONTS.DISPLAY}; font-weight: 900; font-size: 0.7rem; color: ${COLORS.ROSE}; letter-spacing: 0.08em; text-transform: uppercase; }
 .nav-links { flex: 1; overflow-x: auto; overflow-y: hidden; display: flex; align-items: center; gap: 0.25rem; padding: 0; white-space: nowrap; }
 .nav-link {
   display: inline-block; padding: 0.4rem 0.75rem; font-size: 0.75rem; color: ${COLORS.FLORAL_WHITE};
-  text-decoration: none; transition: all 0.2s; border-bottom: 2px solid transparent; border-left: none;
+  text-decoration: none; transition: all 0.2s; border-bottom: 2px solid transparent;
 }
 .nav-link:hover, .nav-link.active {
-  color: ${COLORS.FLORAL_WHITE}; border-bottom-color: ${COLORS.ROSE}; border-left-color: transparent; background: none;
+  color: ${COLORS.PURE_WHITE}; border-bottom-color: ${COLORS.ROSE};
 }
-.nav-footer { flex-shrink: 0; padding: 0; border-top: none; display: flex; align-items: center; gap: 0.4rem; }
+.nav-footer { flex-shrink: 0; padding: 0; display: flex; align-items: center; gap: 0.4rem; }
 
 
 /* ============ MAIN CONTENT ============ */
@@ -704,8 +705,8 @@ main { margin-left: 0; margin-top: 52px; }
   main { margin-top: 0; }
   .hero { min-height: auto; page-break-after: always; }
   .content-section { page-break-inside: avoid; padding: 2rem 0; }
-  body { background: white; color: #12061A; }
-  .data-table thead th { background: #12061A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: white; color: ${COLORS.LICORICE}; }
+  .data-table thead th { background: ${COLORS.LICORICE} !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 </style>
 </head>

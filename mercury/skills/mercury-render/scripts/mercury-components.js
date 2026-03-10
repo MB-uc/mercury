@@ -41,7 +41,7 @@ const COLORS = {
   HYPERLINK:      "FF006F",   // Rose — matches brand template
 
   // Mercury product palette
-  MERCURY_BLUE:   "12061A",
+  MERCURY_BLUE:   "0068FF",
   MERCURY_ACCENT: "FF006F",
   MERCURY_LIGHT:  "F7F6EE",
   MERCURY_GRAY:   "F5F5F5",

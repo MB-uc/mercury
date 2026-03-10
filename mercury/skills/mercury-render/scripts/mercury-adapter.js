@@ -50,9 +50,10 @@ function extractGaps(artefact) {
     .filter(g => g.status === "searched_not_found")
     .map(g => ({
       gap: g.category || "",
+      applies: g.applies_to || g.section_name || "",
       section: g.search_method || "",
       priority: g.priority || "Medium",
-      detail: g.search_method || "",
+      detail: g.reasoning || g.search_method || "",
       claim_ids: g.claim_ids || [],
     }));
 }
@@ -271,6 +272,25 @@ function buildReportData(stages, opts = {}) {
     talkingPoints: [],
     pagesAnalysed: [],
     methodology: "",
+
+    // Optional sections (populated by later stages)
+    ratings: null,
+    summaryRatings: null,
+    benchmarks: null,
+    overallAssessment: null,
+    sitemapData: null,
+
+    // Compete stage fields
+    companyA: "",
+    companyB: "",
+    comparisonMatrix: [],
+    whereALeads: [],
+    whereBLeads: [],
+
+    // Meeting stage fields
+    agenda: null,
+    preRead: null,
+    facilitatorGuide: null,
   };
 
   // ---- BRIEF stage ----
@@ -359,9 +379,10 @@ function buildReportData(stages, opts = {}) {
     reportData.claims = reportData.claims.concat(m.claims || []);
   }
 
-  // Deduplicate claims by claim_id
+  // Deduplicate claims by claim_id (keep claims without an id)
   const seenClaims = new Set();
   reportData.claims = reportData.claims.filter(c => {
+    if (!c || !c.claim_id) return true; // keep claims without id
     if (seenClaims.has(c.claim_id)) return false;
     seenClaims.add(c.claim_id);
     return true;

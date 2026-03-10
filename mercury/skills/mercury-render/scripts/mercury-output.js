@@ -135,6 +135,18 @@ async function renderDOCX(reportData, outputPath) {
     children.push(M.spacer(400));
   }
 
+  // Ratings (from brief synthesis or compete summary)
+  const ratings = reportData.summaryRatings || reportData.ratings;
+  if (ratings && ratings.length > 0) {
+    const ratingHeaders = ["Area", "Assessment"];
+    const ratingRows = ratings.map(r => [
+      r.dimension || r.label || r.area || "",
+      r.rating || r.ratingA || r.assessment || "",
+    ]);
+    children.push(M.dataTable(ratingHeaders, ratingRows, [5000, 4026]));
+    children.push(M.spacer(200));
+  }
+
   // Strengths
   if (reportData.strengths && reportData.strengths.length > 0) {
     children.push(M.heading1("What they do well"));
@@ -145,10 +157,33 @@ async function renderDOCX(reportData, outputPath) {
     children.push(M.spacer(200));
   }
 
+  // Peer comparison (compete stage)
+  if (reportData.comparisonMatrix && reportData.comparisonMatrix.length > 0) {
+    children.push(M.heading1("Peer comparison"));
+    if (reportData.companyA || reportData.companyB) {
+      children.push(M.bodyText(`${reportData.companyA || "Company A"} vs ${reportData.companyB || "Company B"}`));
+    }
+    const compHeaders = ["Dimension", reportData.companyA || "Company A", reportData.companyB || "Company B", "Edge"];
+    const compRows = reportData.comparisonMatrix.map(row => [
+      row.dimension || "", row.a || "", row.b || "", row.edge || "",
+    ]);
+    children.push(M.dataTable(compHeaders, compRows, [2500, 2500, 2500, 1526]));
+    children.push(M.spacer(200));
+  }
+
   // Gaps
   if (reportData.gaps && reportData.gaps.length > 0) {
     children.push(M.heading1("Gaps versus best practice"));
     children.push(M.gapsTable(reportData.gaps));
+    children.push(M.spacer(200));
+  }
+
+  // Benchmarks
+  if (reportData.benchmarks && reportData.benchmarks.rows) {
+    children.push(M.heading1("Connect.IQ benchmark context"));
+    const bHeaders = reportData.benchmarks.headers || ["Category", "Median", "P75", "Estimate", "Assessment"];
+    const bWidths = bHeaders.map(() => Math.floor(9026 / bHeaders.length));
+    children.push(M.dataTable(bHeaders, reportData.benchmarks.rows, bWidths));
     children.push(M.spacer(200));
   }
 
@@ -157,8 +192,25 @@ async function renderDOCX(reportData, outputPath) {
     children.push(M.heading1("Priorities"));
     reportData.talkingPoints.forEach((tp, i) => {
       children.push(M.heading3(`${i + 1}. ${tp.title}`));
-      children.push(M.bodyText(tp.detail));
+      if (tp.detail) children.push(M.bodyText(tp.detail));
     });
+    children.push(M.spacer(200));
+  }
+
+  // Meeting data (agenda, pre-read, facilitator guide)
+  if (reportData.agenda) {
+    children.push(M.heading1("Meeting agenda"));
+    children.push(M.bodyText(typeof reportData.agenda === "string" ? reportData.agenda : JSON.stringify(reportData.agenda, null, 2)));
+    children.push(M.spacer(200));
+  }
+  if (reportData.preRead) {
+    children.push(M.heading1("Client pre-read"));
+    children.push(M.bodyText(typeof reportData.preRead === "string" ? reportData.preRead : JSON.stringify(reportData.preRead, null, 2)));
+    children.push(M.spacer(200));
+  }
+  if (reportData.facilitatorGuide) {
+    children.push(M.heading1("Facilitator guide"));
+    children.push(M.bodyText(typeof reportData.facilitatorGuide === "string" ? reportData.facilitatorGuide : JSON.stringify(reportData.facilitatorGuide, null, 2)));
     children.push(M.spacer(200));
   }
 
@@ -200,6 +252,16 @@ async function renderPPTX(reportData, outputPath) {
     MP.contentSlide(pptx, "Executive summary", reportData.executiveSummary, { fontSize: 11 });
   }
 
+  // Ratings (from brief synthesis or compete summary)
+  const ratings = reportData.summaryRatings || reportData.ratings;
+  if (ratings && ratings.length > 0) {
+    const normalizedRatings = ratings.map(r => ({
+      label: r.dimension || r.label || r.area || "",
+      rating: r.rating || r.ratingA || r.assessment || "",
+    }));
+    MP.ratingSlide(pptx, "Assessment summary", normalizedRatings);
+  }
+
   // Strengths
   if (reportData.strengths && reportData.strengths.length > 0) {
     MP.sectionSlide(pptx, "What they do well");
@@ -208,10 +270,27 @@ async function renderPPTX(reportData, outputPath) {
     })));
   }
 
+  // Peer comparison (compete stage)
+  if (reportData.comparisonMatrix && reportData.comparisonMatrix.length > 0) {
+    MP.sectionSlide(pptx, "Peer comparison", "", { variant: "blue" });
+    const compHeaders = ["Dimension", reportData.companyA || "Company A", reportData.companyB || "Company B", "Edge"];
+    const compRows = reportData.comparisonMatrix.map(row => [
+      row.dimension || "", row.a || "", row.b || "", row.edge || "",
+    ]);
+    MP.tableSlide(pptx, "Detailed comparison", compHeaders, compRows, { colW: [3, 3.5, 3.5, 2.13] });
+  }
+
   // Gaps
   if (reportData.gaps && reportData.gaps.length > 0) {
     MP.sectionSlide(pptx, "Gaps versus best practice");
     MP.gapsSlide(pptx, "Gaps versus best practice", reportData.gaps);
+  }
+
+  // Benchmarks
+  if (reportData.benchmarks && reportData.benchmarks.rows) {
+    MP.sectionSlide(pptx, "Connect.IQ benchmarks");
+    const bHeaders = reportData.benchmarks.headers || ["Category", "Median", "P75", "Estimate", "Assessment"];
+    MP.tableSlide(pptx, "Benchmark context", bHeaders, reportData.benchmarks.rows);
   }
 
   // Talking points
@@ -222,6 +301,23 @@ async function renderPPTX(reportData, outputPath) {
     })), { numbered: true });
   }
 
+  // Meeting data (agenda, pre-read, facilitator guide)
+  if (reportData.agenda || reportData.preRead || reportData.facilitatorGuide) {
+    MP.sectionSlide(pptx, "Meeting pack", "", { variant: "blue" });
+    if (reportData.agenda) {
+      const agendaText = typeof reportData.agenda === "string" ? reportData.agenda : JSON.stringify(reportData.agenda, null, 2);
+      MP.contentSlide(pptx, "Meeting agenda", agendaText, { fontSize: 10 });
+    }
+    if (reportData.preRead) {
+      const preReadText = typeof reportData.preRead === "string" ? reportData.preRead : JSON.stringify(reportData.preRead, null, 2);
+      MP.contentSlide(pptx, "Client pre-read", preReadText, { fontSize: 10 });
+    }
+    if (reportData.facilitatorGuide) {
+      const guideText = typeof reportData.facilitatorGuide === "string" ? reportData.facilitatorGuide : JSON.stringify(reportData.facilitatorGuide, null, 2);
+      MP.contentSlide(pptx, "Facilitator guide", guideText, { fontSize: 10 });
+    }
+  }
+
   // Pages analysed
   if (reportData.pagesAnalysed && reportData.pagesAnalysed.length > 0) {
     MP.sectionSlide(pptx, "Pages analysed");
@@ -229,7 +325,7 @@ async function renderPPTX(reportData, outputPath) {
     for (let i = 0; i < reportData.pagesAnalysed.length; i += batchSize) {
       const batch = reportData.pagesAnalysed.slice(i, i + batchSize);
       MP.tableSlide(pptx, `Pages analysed (${i + 1}–${Math.min(i + batchSize, reportData.pagesAnalysed.length)})`,
-        ["URL", "Claims"], batch, { colW: [8, 4] });
+        ["URL", "Type", "Claims"], batch, { colW: [6, 2, 4] });
     }
   }
 
@@ -281,28 +377,33 @@ async function renderStage(config) {
     const filename = `${slug}-${stage}.${fmt === "html" ? "html" : fmt}`;
     const outputPath = path.join(dir, filename);
 
-    if (fmt === "html") {
-      renderHTML(reportData, outputPath);
-      result.files.html = outputPath;
-    } else if (fmt === "docx") {
-      await renderDOCX(reportData, outputPath);
-      result.files.docx = outputPath;
-    } else if (fmt === "pptx") {
-      await renderPPTX(reportData, outputPath);
-      result.files.pptx = outputPath;
-    }
+    try {
+      if (fmt === "html") {
+        renderHTML(reportData, outputPath);
+        result.files.html = outputPath;
+      } else if (fmt === "docx") {
+        await renderDOCX(reportData, outputPath);
+        result.files.docx = outputPath;
+      } else if (fmt === "pptx") {
+        await renderPPTX(reportData, outputPath);
+        result.files.pptx = outputPath;
+      }
 
-    // Record in manifest
-    manifest.documents = manifest.documents.filter(
-      d => !(d.stage === stage && d.format === fmt)
-    );
-    manifest.documents.push({
-      stage,
-      format: fmt,
-      path: outputPath,
-      filename,
-      rendered_at: timestamp,
-    });
+      // Record in manifest
+      manifest.documents = manifest.documents.filter(
+        d => !(d.stage === stage && d.format === fmt)
+      );
+      manifest.documents.push({
+        stage,
+        format: fmt,
+        path: outputPath,
+        filename,
+        rendered_at: timestamp,
+      });
+    } catch (err) {
+      console.error(`Failed to render ${fmt.toUpperCase()} for stage "${stage}": ${err.message}`);
+      // Continue with other formats
+    }
   }
 
   // Always rebuild the cumulative HTML hub

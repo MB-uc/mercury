@@ -76,7 +76,36 @@ const LAYOUT = {
   CONTENT_H: 5.5,
   FOOTER_Y:  7.0,
   FOOTER_H:  0.4,
+  // Logo placement (white-standard, top-right on all slides)
+  LOGO_X: 11.8,
+  LOGO_Y: 0.15,
+  LOGO_W: 1.2,
+  LOGO_H: 0.36,
+  // Accent bar at top of slides
+  ACCENT_H: 0.06,
+  // Rose underline on content slides
+  UNDERLINE_W: 1.5,
 };
+
+const FONT_SIZES = {
+  TITLE:      44,
+  SECTION:    36,
+  SUBTITLE:   26,
+  THIRD_LINE: 18,
+  HEADING:    22,
+  SUBHEADING: 16,
+  COLUMN_HEAD: 14,
+  BULLET_TITLE: 13,
+  BODY:       12,
+  BULLET_DETAIL: 11,
+  TABLE_CELL: 10,
+  META:        9,
+  FOOTER:      9,
+  TAGLINE:     8,
+};
+
+// Table border color (dark purple, subtle on dark bg)
+const TABLE_BORDER_COLOR = "2A1535";
 
 // ============================================================
 // LOGO HELPER
@@ -114,57 +143,38 @@ function createPresentation(title, author) {
   pptx.author = author || "IDX Mercury";
   pptx.title = title || "Mercury Report";
 
+  // Shared master objects
+  const accentBar = (color) => ({ rect: { x: 0, y: 0, w: LAYOUT.WIDTH, h: LAYOUT.ACCENT_H, fill: { color } } });
+  const footerBar = { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: LAYOUT.FOOTER_H, fill: { color: COLORS.LICORICE } } };
+  const footerDivider = { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: 0.01, fill: { color: COLORS.ROSE } } };
+  const footerBrand = { text: {
+    text: "MERCURY",
+    options: {
+      x: LAYOUT.CONTENT_X, y: LAYOUT.FOOTER_Y + 0.04, w: 3, h: 0.3,
+      fontSize: FONT_SIZES.FOOTER, fontFace: FONTS.DISPLAY,
+      color: COLORS.ROSE, bold: true,
+    },
+  }};
+
   // ---- TITLE slide master (Licorice background) ----
   pptx.defineSlideMaster({
     title: "MERCURY_TITLE",
     background: { color: COLORS.LICORICE },
-    objects: [
-      // Rose accent bar at top
-      { rect: { x: 0, y: 0, w: LAYOUT.WIDTH, h: 0.06, fill: { color: COLORS.ROSE } } },
-    ],
+    objects: [accentBar(COLORS.ROSE)],
   });
 
   // ---- CONTENT slide master (Dark Licorice background — v3.1 dark theme) ----
   pptx.defineSlideMaster({
     title: "MERCURY_CONTENT",
     background: { color: COLORS.LICORICE },
-    objects: [
-      // Rose accent bar at top
-      { rect: { x: 0, y: 0, w: LAYOUT.WIDTH, h: 0.06, fill: { color: COLORS.ROSE } } },
-      // Footer bar
-      { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: LAYOUT.FOOTER_H, fill: { color: COLORS.LICORICE } } },
-      // Footer divider line (subtle separation)
-      { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: 0.01, fill: { color: COLORS.ROSE } } },
-      // Footer — Mercury branding in IDX Headline, Rose
-      { text: {
-        text: "MERCURY",
-        options: {
-          x: 0.6, y: LAYOUT.FOOTER_Y + 0.04, w: 3, h: 0.3,
-          fontSize: 9, fontFace: FONTS.DISPLAY,
-          color: COLORS.ROSE, bold: true,
-        },
-      }},
-    ],
+    objects: [accentBar(COLORS.ROSE), footerBar, footerDivider, footerBrand],
   });
 
   // ---- DARK CONTENT alias (same as MERCURY_CONTENT, for clarity in code) ----
   pptx.defineSlideMaster({
     title: "MERCURY_DARK_CONTENT",
     background: { color: COLORS.LICORICE },
-    objects: [
-      { rect: { x: 0, y: 0, w: LAYOUT.WIDTH, h: 0.06, fill: { color: COLORS.ROSE } } },
-      { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: LAYOUT.FOOTER_H, fill: { color: COLORS.LICORICE } } },
-      { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: 0.01, fill: { color: COLORS.ROSE } } },
-      // Footer — Mercury branding in IDX Headline, Rose
-      { text: {
-        text: "MERCURY",
-        options: {
-          x: 0.6, y: LAYOUT.FOOTER_Y + 0.04, w: 3, h: 0.3,
-          fontSize: 9, fontFace: FONTS.DISPLAY,
-          color: COLORS.ROSE, bold: true,
-        },
-      }},
-    ],
+    objects: [accentBar(COLORS.ROSE), footerBar, footerDivider, footerBrand],
   });
 
   // ---- SECTION divider masters ----
@@ -172,20 +182,14 @@ function createPresentation(title, author) {
   pptx.defineSlideMaster({
     title: "MERCURY_SECTION",
     background: { color: COLORS.ROSE },
-    objects: [
-      { rect: { x: 0, y: 0, w: LAYOUT.WIDTH, h: 0.06, fill: { color: COLORS.LICORICE } } },
-      { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: LAYOUT.FOOTER_H, fill: { color: COLORS.LICORICE } } },
-    ],
+    objects: [accentBar(COLORS.LICORICE), footerBar],
   });
 
   // Blue variant
   pptx.defineSlideMaster({
     title: "MERCURY_SECTION_BLUE",
     background: { color: COLORS.BLUE },
-    objects: [
-      { rect: { x: 0, y: 0, w: LAYOUT.WIDTH, h: 0.06, fill: { color: COLORS.LICORICE } } },
-      { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: LAYOUT.FOOTER_H, fill: { color: COLORS.LICORICE } } },
-    ],
+    objects: [accentBar(COLORS.LICORICE), footerBar],
   });
 
   return pptx;
@@ -209,27 +213,27 @@ function titleSlide(pptx, title, subtitle, meta, opts = {}) {
   // IDX logo (white variant on dark bg, top-right)
   const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
+    slide.addImage({ path: logoPath, x: LAYOUT.LOGO_X, y: LAYOUT.LOGO_Y, w: LAYOUT.LOGO_W, h: LAYOUT.LOGO_H });
   }
 
   // Title — uses display font
-  slide.addText(title, {
-    x: 0.6, y: 2.0, w: 12, h: 1.2,
-    fontSize: 44, fontFace: FONTS.DISPLAY,
+  slide.addText(title || "", {
+    x: LAYOUT.CONTENT_X, y: 2.0, w: 12, h: 1.2,
+    fontSize: FONT_SIZES.TITLE, fontFace: FONTS.DISPLAY,
     color: COLORS.PURE_WHITE, bold: true,
     margin: 0,
   });
 
   // Rose accent divider
   slide.addShape(pptx.shapes.LINE, {
-    x: 0.6, y: 3.3, w: 3, h: 0,
+    x: LAYOUT.CONTENT_X, y: 3.3, w: 3, h: 0,
     line: { color: COLORS.ROSE, width: 3 },
   });
 
   // Subtitle (Rose)
-  slide.addText(subtitle, {
-    x: 0.6, y: 3.45, w: 12, h: 0.7,
-    fontSize: 26, fontFace: FONTS.HEADING,
+  slide.addText(subtitle || "", {
+    x: LAYOUT.CONTENT_X, y: 3.45, w: 12, h: 0.7,
+    fontSize: FONT_SIZES.SUBTITLE, fontFace: FONTS.HEADING,
     color: COLORS.ROSE,
     margin: 0,
   });
@@ -237,8 +241,8 @@ function titleSlide(pptx, title, subtitle, meta, opts = {}) {
   // Optional third line
   if (opts.thirdLine) {
     slide.addText(opts.thirdLine, {
-      x: 0.6, y: 4.15, w: 12, h: 0.5,
-      fontSize: 18, fontFace: FONTS.BODY,
+      x: LAYOUT.CONTENT_X, y: 4.15, w: 12, h: 0.5,
+      fontSize: FONT_SIZES.THIRD_LINE, fontFace: FONTS.BODY,
       color: COLORS.MEDIUM,
       margin: 0,
     });
@@ -248,11 +252,11 @@ function titleSlide(pptx, title, subtitle, meta, opts = {}) {
   if (meta && meta.length > 0) {
     const metaY = opts.thirdLine ? 4.7 : 4.3;
     const metaRows = meta.map(([label, value]) => [
-      { text: label, options: { fontSize: 9, fontFace: FONTS.BODY, color: COLORS.MEDIUM, bold: true } },
-      { text: value, options: { fontSize: 9, fontFace: FONTS.BODY, color: COLORS.PURE_WHITE } },
+      { text: label || "", options: { fontSize: FONT_SIZES.META, fontFace: FONTS.BODY, color: COLORS.MEDIUM, bold: true } },
+      { text: value || "", options: { fontSize: FONT_SIZES.META, fontFace: FONTS.BODY, color: COLORS.PURE_WHITE } },
     ]);
     slide.addTable(metaRows, {
-      x: 0.6, y: metaY, w: 5, h: meta.length * 0.3,
+      x: LAYOUT.CONTENT_X, y: metaY, w: 5, h: meta.length * 0.3,
       border: { type: "none" },
       colW: [2, 3],
     });
@@ -260,8 +264,8 @@ function titleSlide(pptx, title, subtitle, meta, opts = {}) {
 
   // Tagline — uses serif font
   slide.addText("Prepared by IDX using the Mercury platform", {
-    x: 0.6, y: 6.5, w: 12, h: 0.3,
-    fontSize: 8, fontFace: FONTS.SERIF,
+    x: LAYOUT.CONTENT_X, y: 6.5, w: 12, h: 0.3,
+    fontSize: FONT_SIZES.TAGLINE, fontFace: FONTS.SERIF,
     color: COLORS.MEDIUM, italic: true,
     margin: 0,
   });
@@ -284,26 +288,26 @@ function sectionSlide(pptx, heading, subheading, opts = {}) {
   // White IDX logo on dark accent background
   const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
+    slide.addImage({ path: logoPath, x: LAYOUT.LOGO_X, y: LAYOUT.LOGO_Y, w: LAYOUT.LOGO_W, h: LAYOUT.LOGO_H });
   }
 
-  slide.addText(heading, {
-    x: 0.6, y: 2.5, w: 12, h: 1.0,
-    fontSize: 36, fontFace: FONTS.HEADING,
+  slide.addText(heading || "", {
+    x: LAYOUT.CONTENT_X, y: 2.5, w: 12, h: 1.0,
+    fontSize: FONT_SIZES.SECTION, fontFace: FONTS.HEADING,
     color: COLORS.PURE_WHITE, bold: true,
     margin: 0,
   });
 
   // White underline
   slide.addShape(pptx.shapes.LINE, {
-    x: 0.6, y: 3.55, w: 2.5, h: 0,
+    x: LAYOUT.CONTENT_X, y: 3.55, w: 2.5, h: 0,
     line: { color: COLORS.PURE_WHITE, width: 3 },
   });
 
   if (subheading) {
     slide.addText(subheading, {
-      x: 0.6, y: 3.7, w: 12, h: 0.5,
-      fontSize: 16, fontFace: FONTS.BODY,
+      x: LAYOUT.CONTENT_X, y: 3.7, w: 12, h: 0.5,
+      fontSize: FONT_SIZES.SUBHEADING, fontFace: FONTS.BODY,
       color: COLORS.PURE_WHITE,
       margin: 0,
     });
@@ -311,8 +315,8 @@ function sectionSlide(pptx, heading, subheading, opts = {}) {
 
   // Mercury branding in footer area
   slide.addText("MERCURY", {
-    x: 0.6, y: LAYOUT.FOOTER_Y + 0.04, w: 3, h: 0.3,
-    fontSize: 9, fontFace: FONTS.DISPLAY,
+    x: LAYOUT.CONTENT_X, y: LAYOUT.FOOTER_Y + 0.04, w: 3, h: 0.3,
+    fontSize: FONT_SIZES.FOOTER, fontFace: FONTS.DISPLAY,
     color: COLORS.ROSE, bold: true,
   });
 
@@ -332,29 +336,29 @@ function contentSlide(pptx, heading, body, opts = {}) {
   // White IDX logo on dark background
   const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
+    slide.addImage({ path: logoPath, x: LAYOUT.LOGO_X, y: LAYOUT.LOGO_Y, w: LAYOUT.LOGO_W, h: LAYOUT.LOGO_H });
   }
 
   // Heading — Pure White on dark bg
-  slide.addText(heading, {
-    x: LAYOUT.CONTENT_X, y: 0.25, w: LAYOUT.CONTENT_W - 1.5, h: 0.7,
-    fontSize: 22, fontFace: FONTS.HEADING,
+  slide.addText(heading || "", {
+    x: LAYOUT.CONTENT_X, y: 0.25, w: LAYOUT.CONTENT_W - LAYOUT.UNDERLINE_W, h: 0.7,
+    fontSize: FONT_SIZES.HEADING, fontFace: FONTS.HEADING,
     color: COLORS.PURE_WHITE, bold: true,
     margin: 0,
   });
 
   // Rose accent underline
   slide.addShape(pptx.shapes.LINE, {
-    x: LAYOUT.CONTENT_X, y: 0.98, w: 1.5, h: 0,
+    x: LAYOUT.CONTENT_X, y: 0.98, w: LAYOUT.UNDERLINE_W, h: 0,
     line: { color: COLORS.ROSE, width: 2 },
   });
 
   // Body — Floral White on dark bg
   const bodyY = opts.bodyY || 1.15;
   const bodyH = LAYOUT.FOOTER_Y - bodyY - 0.2;
-  slide.addText(body, {
+  slide.addText(body || "", {
     x: LAYOUT.CONTENT_X, y: bodyY, w: LAYOUT.CONTENT_W, h: bodyH,
-    fontSize: opts.fontSize || 12, fontFace: FONTS.BODY,
+    fontSize: opts.fontSize || FONT_SIZES.BODY, fontFace: FONTS.BODY,
     color: COLORS.FLORAL_WHITE, valign: "top",
   });
 
@@ -369,23 +373,24 @@ function contentSlide(pptx, heading, body, opts = {}) {
  * @param {object} opts - {numbered}
  */
 function bulletSlide(pptx, heading, bullets, opts = {}) {
+  if (!bullets || !Array.isArray(bullets)) bullets = [];
   const slide = pptx.addSlide({ masterName: "MERCURY_CONTENT" });
 
   // White IDX logo
   const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
+    slide.addImage({ path: logoPath, x: LAYOUT.LOGO_X, y: LAYOUT.LOGO_Y, w: LAYOUT.LOGO_W, h: LAYOUT.LOGO_H });
   }
 
-  slide.addText(heading, {
-    x: LAYOUT.CONTENT_X, y: 0.25, w: LAYOUT.CONTENT_W - 1.5, h: 0.7,
-    fontSize: 22, fontFace: FONTS.HEADING,
+  slide.addText(heading || "", {
+    x: LAYOUT.CONTENT_X, y: 0.25, w: LAYOUT.CONTENT_W - LAYOUT.UNDERLINE_W, h: 0.7,
+    fontSize: FONT_SIZES.HEADING, fontFace: FONTS.HEADING,
     color: COLORS.PURE_WHITE, bold: true,
     margin: 0,
   });
 
   slide.addShape(pptx.shapes.LINE, {
-    x: LAYOUT.CONTENT_X, y: 0.98, w: 1.5, h: 0,
+    x: LAYOUT.CONTENT_X, y: 0.98, w: LAYOUT.UNDERLINE_W, h: 0,
     line: { color: COLORS.ROSE, width: 2 },
   });
 
@@ -397,17 +402,17 @@ function bulletSlide(pptx, heading, bullets, opts = {}) {
         options: {
           bullet: opts.numbered ? { type: "number" } : { code: "2022" },
           breakLine: true,
-          fontSize: 12, fontFace: FONTS.BODY, color: COLORS.FLORAL_WHITE,
+          fontSize: FONT_SIZES.BODY, fontFace: FONTS.BODY, color: COLORS.FLORAL_WHITE,
           paraSpaceAfter: 8,
         },
       });
     } else {
       textItems.push({
-        text: item.title,
+        text: item.title || "",
         options: {
           bullet: opts.numbered ? { type: "number" } : { code: "2022" },
           breakLine: true,
-          fontSize: 13, fontFace: FONTS.HEADING, color: COLORS.PURE_WHITE, bold: true,
+          fontSize: FONT_SIZES.BULLET_TITLE, fontFace: FONTS.HEADING, color: COLORS.PURE_WHITE, bold: true,
           paraSpaceAfter: 2,
         },
       });
@@ -416,7 +421,7 @@ function bulletSlide(pptx, heading, bullets, opts = {}) {
           text: item.detail,
           options: {
             breakLine: true, indentLevel: 1,
-            fontSize: 11, fontFace: FONTS.BODY, color: COLORS.FLORAL_WHITE,
+            fontSize: FONT_SIZES.BULLET_DETAIL, fontFace: FONTS.BODY, color: COLORS.FLORAL_WHITE,
             paraSpaceAfter: 10,
           },
         });
@@ -425,7 +430,7 @@ function bulletSlide(pptx, heading, bullets, opts = {}) {
   });
 
   slide.addText(textItems, {
-    x: LAYOUT.CONTENT_X, y: 1.15, w: LAYOUT.CONTENT_W, h: 5.5,
+    x: LAYOUT.CONTENT_X, y: 1.15, w: LAYOUT.CONTENT_W, h: LAYOUT.CONTENT_H,
     valign: "top",
   });
 
@@ -441,23 +446,25 @@ function bulletSlide(pptx, heading, bullets, opts = {}) {
  * @param {object} opts - {colW, cellOpts(rowIdx, colIdx, value)}
  */
 function tableSlide(pptx, heading, headers, rows, opts = {}) {
+  if (!headers || !Array.isArray(headers)) headers = [];
+  if (!rows || !Array.isArray(rows)) rows = [];
   const slide = pptx.addSlide({ masterName: "MERCURY_CONTENT" });
 
   // White IDX logo
   const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
+    slide.addImage({ path: logoPath, x: LAYOUT.LOGO_X, y: LAYOUT.LOGO_Y, w: LAYOUT.LOGO_W, h: LAYOUT.LOGO_H });
   }
 
-  slide.addText(heading, {
-    x: LAYOUT.CONTENT_X, y: 0.25, w: LAYOUT.CONTENT_W - 1.5, h: 0.7,
-    fontSize: 22, fontFace: FONTS.HEADING,
+  slide.addText(heading || "", {
+    x: LAYOUT.CONTENT_X, y: 0.25, w: LAYOUT.CONTENT_W - LAYOUT.UNDERLINE_W, h: 0.7,
+    fontSize: FONT_SIZES.HEADING, fontFace: FONTS.HEADING,
     color: COLORS.PURE_WHITE, bold: true,
     margin: 0,
   });
 
   slide.addShape(pptx.shapes.LINE, {
-    x: LAYOUT.CONTENT_X, y: 0.98, w: 1.5, h: 0,
+    x: LAYOUT.CONTENT_X, y: 0.98, w: LAYOUT.UNDERLINE_W, h: 0,
     line: { color: COLORS.ROSE, width: 2 },
   });
 
@@ -465,10 +472,10 @@ function tableSlide(pptx, heading, headers, rows, opts = {}) {
   const headerRow = headers.map(h => ({
     text: h,
     options: {
-      fontSize: 10, fontFace: FONTS.HEADING,
+      fontSize: FONT_SIZES.TABLE_CELL, fontFace: FONTS.HEADING,
       color: COLORS.PURE_WHITE, bold: true,
       fill: { color: COLORS.ROSE },
-      border: { pt: 0.5, color: "2A1535" },
+      border: { pt: 0.5, color: TABLE_BORDER_COLOR },
       valign: "middle",
     },
   }));
@@ -476,19 +483,19 @@ function tableSlide(pptx, heading, headers, rows, opts = {}) {
   // Body rows alternate between dark shades with Floral White text
   const dataRows = rows.map((row, ri) => {
     const fill = ri % 2 === 0 ? COLORS.DARK_ROW_A : COLORS.DARK_ROW_B;
-    return row.map((val, ci) => {
+    return (row || []).map((val, ci) => {
       const cellOptions = opts.cellOpts ? opts.cellOpts(ri, ci, val) : {};
       const isTextObj = typeof val === "object" && val !== null && val.text;
-      const text = isTextObj ? val.text : String(val);
+      const text = isTextObj ? val.text : String(val != null ? val : "");
       const valOpts = isTextObj ? (val.options || {}) : {};
       return {
         text,
         options: {
-          fontSize: 10, fontFace: FONTS.BODY,
+          fontSize: FONT_SIZES.TABLE_CELL, fontFace: FONTS.BODY,
           color: valOpts.color || cellOptions.color || COLORS.FLORAL_WHITE,
           bold: valOpts.bold || cellOptions.bold || false,
           fill: { color: valOpts.fill ? (valOpts.fill.color || valOpts.fill) : (cellOptions.fill || fill) },
-          border: { pt: 0.5, color: "2A1535" },
+          border: { pt: 0.5, color: TABLE_BORDER_COLOR },
           valign: "middle",
           ...cellOptions,
         },
@@ -497,12 +504,12 @@ function tableSlide(pptx, heading, headers, rows, opts = {}) {
   });
 
   const tableData = [headerRow, ...dataRows];
-  const tableH = Math.min(0.35 + rows.length * 0.32, 5.5);
+  const tableH = Math.min(0.35 + rows.length * 0.32, LAYOUT.CONTENT_H);
 
   slide.addTable(tableData, {
     x: LAYOUT.CONTENT_X, y: 1.15, w: LAYOUT.CONTENT_W, h: tableH,
     colW: opts.colW || undefined,
-    border: { pt: 0.5, color: "2A1535" },
+    border: { pt: 0.5, color: TABLE_BORDER_COLOR },
     autoPage: false,
   });
 
@@ -523,23 +530,23 @@ function twoColumnSlide(pptx, heading, leftContent, rightContent, opts = {}) {
   // White IDX logo
   const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
+    slide.addImage({ path: logoPath, x: LAYOUT.LOGO_X, y: LAYOUT.LOGO_Y, w: LAYOUT.LOGO_W, h: LAYOUT.LOGO_H });
   }
 
-  slide.addText(heading, {
-    x: LAYOUT.CONTENT_X, y: 0.25, w: LAYOUT.CONTENT_W - 1.5, h: 0.7,
-    fontSize: 22, fontFace: FONTS.HEADING,
+  slide.addText(heading || "", {
+    x: LAYOUT.CONTENT_X, y: 0.25, w: LAYOUT.CONTENT_W - LAYOUT.UNDERLINE_W, h: 0.7,
+    fontSize: FONT_SIZES.HEADING, fontFace: FONTS.HEADING,
     color: COLORS.PURE_WHITE, bold: true,
     margin: 0,
   });
 
   slide.addShape(pptx.shapes.LINE, {
-    x: LAYOUT.CONTENT_X, y: 0.98, w: 1.5, h: 0,
+    x: LAYOUT.CONTENT_X, y: 0.98, w: LAYOUT.UNDERLINE_W, h: 0,
     line: { color: COLORS.ROSE, width: 2 },
   });
 
-  const colW = 5.7;
   const colGap = 0.5;
+  const colW = (LAYOUT.CONTENT_W - colGap) / 2;  // 5.815
   const colY = 1.2;
   const colH = 5.3;
 
@@ -547,16 +554,16 @@ function twoColumnSlide(pptx, heading, leftContent, rightContent, opts = {}) {
   if (opts.leftHeading) {
     slide.addText(opts.leftHeading, {
       x: LAYOUT.CONTENT_X, y: colY, w: colW, h: 0.4,
-      fontSize: 14, fontFace: FONTS.HEADING,
+      fontSize: FONT_SIZES.COLUMN_HEAD, fontFace: FONTS.HEADING,
       color: COLORS.ROSE, bold: true,
       margin: 0,
     });
   }
 
   const leftBodyY = opts.leftHeading ? colY + 0.45 : colY;
-  slide.addText(leftContent, {
+  slide.addText(leftContent || "", {
     x: LAYOUT.CONTENT_X, y: leftBodyY, w: colW, h: colH - (leftBodyY - colY),
-    fontSize: 11, fontFace: FONTS.BODY,
+    fontSize: FONT_SIZES.BULLET_DETAIL, fontFace: FONTS.BODY,
     color: COLORS.FLORAL_WHITE, valign: "top",
   });
 
@@ -564,16 +571,16 @@ function twoColumnSlide(pptx, heading, leftContent, rightContent, opts = {}) {
   if (opts.rightHeading) {
     slide.addText(opts.rightHeading, {
       x: rightX, y: colY, w: colW, h: 0.4,
-      fontSize: 14, fontFace: FONTS.HEADING,
+      fontSize: FONT_SIZES.COLUMN_HEAD, fontFace: FONTS.HEADING,
       color: COLORS.ROSE, bold: true,
       margin: 0,
     });
   }
 
   const rightBodyY = opts.rightHeading ? colY + 0.45 : colY;
-  slide.addText(rightContent, {
+  slide.addText(rightContent || "", {
     x: rightX, y: rightBodyY, w: colW, h: colH - (rightBodyY - colY),
-    fontSize: 11, fontFace: FONTS.BODY,
+    fontSize: FONT_SIZES.BULLET_DETAIL, fontFace: FONTS.BODY,
     color: COLORS.FLORAL_WHITE, valign: "top",
   });
 
@@ -584,6 +591,7 @@ function twoColumnSlide(pptx, heading, leftContent, rightContent, opts = {}) {
  * Add a rating table slide (for exec summary ratings — dark theme).
  */
 function ratingSlide(pptx, heading, ratings) {
+  if (!ratings || !Array.isArray(ratings)) ratings = [];
   const ratingColor = (r) => {
     switch (r) {
       case "Strong":   return { bg: COLORS.AQUAMARINE, fg: COLORS.LICORICE };
@@ -596,10 +604,10 @@ function ratingSlide(pptx, heading, ratings) {
 
   const headers = ["Area", "Assessment"];
   const rows = ratings.map(r => {
-    const colors = ratingColor(r.rating);
+    const colors = ratingColor(r.rating || "");
     return [
-      r.label,
-      { text: r.rating, options: { color: colors.fg, bold: true, fill: { color: colors.bg } } },
+      r.label || r.dimension || r.area || "",
+      { text: r.rating || "", options: { color: colors.fg, bold: true, fill: { color: colors.bg } } },
     ];
   });
 
@@ -610,6 +618,7 @@ function ratingSlide(pptx, heading, ratings) {
  * Add a gaps priority slide (dark theme).
  */
 function gapsSlide(pptx, heading, gaps) {
+  if (!gaps || !Array.isArray(gaps)) gaps = [];
   const prioColor = (p) => {
     switch (p) {
       case "High":   return COLORS.HIGH_RED;
@@ -640,10 +649,15 @@ function gapsSlide(pptx, heading, gaps) {
  * @param {string} outputPath
  */
 async function build(pptx, outputPath) {
-  await pptx.writeFile({ fileName: outputPath });
-  const stats = fs.statSync(outputPath);
-  console.log(`Mercury presentation saved: ${outputPath} (${stats.size} bytes)`);
-  return outputPath;
+  try {
+    await pptx.writeFile({ fileName: outputPath });
+    const stats = fs.statSync(outputPath);
+    console.log(`Mercury presentation saved: ${outputPath} (${stats.size} bytes)`);
+    return outputPath;
+  } catch (err) {
+    console.error(`Failed to build PPTX at ${outputPath}: ${err.message}`);
+    throw err;
+  }
 }
 
 // ============================================================
@@ -655,6 +669,8 @@ module.exports = {
   COLORS,
   FONTS,
   LAYOUT,
+  FONT_SIZES,
+  TABLE_BORDER_COLOR,
 
   // Logos
   getLogoPath,
