@@ -377,6 +377,59 @@ function renderMethodology(data) {
 }
 
 // ============================================================
+// DOCUMENTS TAB
+// ============================================================
+
+/**
+ * Render the Documents section — a download hub listing all rendered files.
+ * Only appears when data.documentsTab is provided (by mercury-output.js).
+ */
+function renderDocuments(data) {
+  if (!data.documentsTab) return "";
+  const tab = data.documentsTab;
+
+  const formatIcons = {
+    HTML: `<span class="doc-icon doc-html">HTML</span>`,
+    DOCX: `<span class="doc-icon doc-docx">DOCX</span>`,
+    PPTX: `<span class="doc-icon doc-pptx">PPTX</span>`,
+    XLSX: `<span class="doc-icon doc-xlsx">XLSX</span>`,
+  };
+
+  let groupsHtml = "";
+  for (const group of (tab.groups || [])) {
+    const filesHtml = group.files.map(f => {
+      const icon = formatIcons[f.format] || `<span class="doc-icon">${escapeHtml(f.format)}</span>`;
+      const time = f.rendered_at ? new Date(f.rendered_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
+      return `
+        <div class="doc-file">
+          ${icon}
+          <div class="doc-file-info">
+            <span class="doc-filename">${escapeHtml(f.filename)}</span>
+            <span class="doc-time">${escapeHtml(time)}</span>
+          </div>
+        </div>`;
+    }).join("");
+
+    groupsHtml += `
+      <div class="doc-group">
+        <h3>${escapeHtml(group.label)}</h3>
+        <div class="doc-files">${filesHtml}</div>
+      </div>`;
+  }
+
+  const stagesText = (tab.stages_completed || []).length > 0
+    ? `${tab.stages_completed.length} stage${tab.stages_completed.length > 1 ? "s" : ""} completed: ${tab.stages_completed.join(", ")}`
+    : "";
+
+  return `
+  <section id="documents" class="content-section fade-in">
+    <h2>Documents</h2>
+    <p class="prose doc-summary">${escapeHtml(stagesText)}</p>
+    <div class="doc-groups">${groupsHtml}</div>
+  </section>`;
+}
+
+// ============================================================
 // NAV BUILDER
 // ============================================================
 
@@ -395,6 +448,7 @@ function buildNav(data) {
   if (data.sitemapData) sections.push({ id: "sitemap", label: "Site architecture" });
   if (data.pagesAnalysed && data.pagesAnalysed.length) sections.push({ id: "pages-analysed", label: "Pages analysed" });
   if (data.methodology) sections.push({ id: "methodology", label: "Methodology" });
+  if (data.documentsTab) sections.push({ id: "documents", label: "Documents" });
 
   const links = sections.map(s => `<a href="#${s.id}" class="nav-link" data-section="${s.id}">${escapeHtml(s.label)}</a>`).join("\n");
   const logoImg = logo ? `<img src="${logo}" alt="IDX" class="nav-logo">` : "";
@@ -445,6 +499,7 @@ function buildPresentation(data) {
   const treemap = renderTreemap(data);
   const pagesAnalysed = renderPagesAnalysed(data);
   const methodology = renderMethodology(data);
+  const documents = renderDocuments(data);
 
   const d3Script = data.sitemapData
     ? '<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>'
@@ -597,6 +652,39 @@ main { margin-left: 0; margin-top: 52px; }
 /* ============ METHODOLOGY ============ */
 .methodology-text { color: ${COLORS.MEDIUM}; }
 
+/* ============ DOCUMENTS TAB ============ */
+.doc-summary { margin-bottom: 1.5rem; color: ${COLORS.MEDIUM}; font-size: 0.9rem; }
+.doc-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+.doc-group {
+  background: ${COLORS.CARD_BG}; border: 1px solid ${COLORS.CARD_BORDER};
+  border-radius: 6px; padding: 1.5rem;
+}
+.doc-group h3 {
+  font-family: ${FONTS.HEADING}; font-size: 1rem; font-weight: 700;
+  color: ${COLORS.PURE_WHITE}; margin-bottom: 1rem;
+  padding-bottom: 0.5rem; border-bottom: 1px solid ${COLORS.CARD_BORDER};
+}
+.doc-files { display: flex; flex-direction: column; gap: 0.75rem; }
+.doc-file {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.5rem 0.75rem; border-radius: 4px;
+  transition: background 0.2s;
+}
+.doc-file:hover { background: rgba(255,255,255,0.06); }
+.doc-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 28px; border-radius: 3px;
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+.doc-html { background: ${COLORS.ROSE}; color: white; }
+.doc-docx { background: ${COLORS.BLUE}; color: white; }
+.doc-pptx { background: ${COLORS.ORANGE}; color: white; }
+.doc-xlsx { background: ${COLORS.LOW_GREEN}; color: white; }
+.doc-file-info { display: flex; flex-direction: column; }
+.doc-filename { font-size: 0.85rem; color: ${COLORS.FLORAL_WHITE}; }
+.doc-time { font-size: 0.7rem; color: ${COLORS.MEDIUM}; }
+
 /* ============ ANIMATIONS ============ */
 .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .fade-in.visible { opacity: 1; transform: translateY(0); }
@@ -634,6 +722,7 @@ ${talkingPoints}
 ${treemap}
 ${pagesAnalysed}
 ${methodology}
+${documents}
 </main>
 
 ${d3Script}
@@ -688,6 +777,7 @@ module.exports = {
   renderTreemap,
   renderPagesAnalysed,
   renderMethodology,
+  renderDocuments,
   buildNav,
   embedFont,
   embedLogo,

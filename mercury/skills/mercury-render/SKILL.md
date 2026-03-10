@@ -39,6 +39,7 @@ mercury-render/
 │   ├── mercury-pptx.js             ← Reusable pptxgenjs building blocks
 │   ├── mercury-html.js             ← Interactive HTML presentation builder
 │   ├── mercury-adapter.js          ← Artefact → reportData transformer (all stages)
+│   ├── mercury-output.js           ← On-demand render + manifest + cumulative hub
 │   └── build-pipeline.sh           ← Validate → convert → verify pipeline
 ├── references/
 │   ├── report-structures.md        ← Section order and content for each report type
@@ -384,6 +385,70 @@ The skill includes IDX logos in `assets/logos/`:
 - `IDX-black-large.png` / `IDX-white-large.png` — large variants for cover pages
 - Tiny variants (`-tiny`) for header/footer placement
 - Use `M.getLogoBuffer("black"|"white")` in docx or `MP.getLogoPath("black"|"white", "large"|"tiny")` in pptx
+
+## Stage flow and output helper
+
+Mercury uses a progressive rendering model. Each pipeline stage (brief, compete, sitemap, meeting) produces an artefact JSON. At the end of each stage, the user is offered formatted output rather than raw data.
+
+### Output helper (`mercury-output.js`)
+
+The output helper at `scripts/mercury-output.js` handles on-demand rendering from artefact files. It:
+
+1. Loads all available artefacts for a company (not just the current stage)
+2. Builds `reportData` via the adapter (cumulative — all completed stages)
+3. Renders requested formats (HTML, DOCX, PPTX)
+4. Maintains a **manifest** (`{company}-mercury-manifest.json`) tracking all rendered files
+5. Rebuilds a **cumulative HTML hub** with a Documents tab listing all outputs
+
+```javascript
+const MO = require('./scripts/mercury-output.js');
+
+const result = await MO.renderStage({
+  dir: '/path/to/artefacts',
+  company: 'rentokil-initial',
+  stage: 'brief',
+  formats: ['html', 'docx', 'pptx'],
+  opts: { sector: 'Business Services', index: 'FTSE 100' },
+});
+
+// result.files = { html: '...path', docx: '...path', pptx: '...path' }
+// result.hub = '...path to cumulative HTML hub'
+// result.manifest = { stages_completed, documents, ... }
+```
+
+### Stage completion protocol
+
+Each command file (`commands/brief.md`, etc.) includes a stage completion protocol. After a stage finishes:
+
+1. **Show a clean summary** — stage name, key counts, one-line assessment
+2. **Offer output formats** — HTML, Word, Slides
+3. **Offer the next stage** — or full report if all stages are done
+4. **Render on demand** — use `mercury-output.js` when the user picks a format
+5. **Hub auto-updates** — the cumulative HTML hub always reflects the latest state
+
+### Documents tab (HTML hub)
+
+The HTML renderer supports a `documentsTab` property on `reportData`. When present, a "Documents" section appears in the nav and at the bottom of the presentation, listing all rendered files grouped by stage with format badges (HTML, DOCX, PPTX, XLSX).
+
+The output helper (`mercury-output.js`) automatically injects this data when building the hub.
+
+### Manifest
+
+The manifest at `{company}-mercury-manifest.json` tracks:
+
+```json
+{
+  "company": "Rentokil Initial",
+  "slug": "rentokil-initial",
+  "stages_completed": ["brief", "compete"],
+  "documents": [
+    { "stage": "brief", "format": "html", "filename": "...", "rendered_at": "..." },
+    { "stage": "brief", "format": "docx", "filename": "...", "rendered_at": "..." }
+  ],
+  "hub_path": "...",
+  "last_updated": "..."
+}
+```
 
 ## Important notes
 
