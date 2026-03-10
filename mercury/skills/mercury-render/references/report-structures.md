@@ -110,3 +110,34 @@ For markdown output, use the same section order and content as the corresponding
 - Bold for emphasis, not italics
 - Horizontal rules (`---`) between major sections
 - No cover page — start directly with the title as H1
+
+---
+
+## Interactive HTML presentation
+
+When rendering as HTML (via `mercury-html.js`), the same section order applies as the corresponding Word document, but with these presentation-layer additions:
+
+### Navigation
+- Fixed left sidebar with section links
+- Active section highlighted on scroll
+- Smooth scroll to section on click
+
+### Visual sections
+- **Hero section**: Full-viewport dark cover with animated title, subtitle, meta data
+- **Stage summary**: Card grid showing which Mercury stages are included
+- **Treemap** (if sitemap data available): D3.js interactive treemap of recommended IA
+- **Timeline** (if meeting data available): Visual agenda timeline
+
+### Interactions
+- Scroll-triggered fade-in animations on all content blocks
+- Hover states on table rows and cards
+- Treemap tooltips with page details
+- Responsive layout (collapses sidebar on narrow viewports)
+
+### Colour mapping
+The HTML presentation uses the same IDX brand tokens as PPTX (dark theme):
+- Background: Licorice (#12061A)
+- Text: Floral White (#F7F6EE)
+- Accent: Rose (#FF006F)
+- Secondary accent: Lemon Lime (#EEFF00)
+- Cards/panels: rgba(255,255,255,0.04) on Licorice

@@ -11,6 +11,7 @@ Mercury prepares IDX consultants for client engagements using proprietary IDX da
 | `/mercury:sitemap <company>` | Sitemap recommendation — IA proposal grounded in Playbook and peers |
 | `/mercury:meeting <company>` | Meeting pack — agenda, pre-read, and facilitator guide |
 | `/mercury:all <company>` | Full pipeline — runs all four stages in sequence |
+| `/mercury:present <company>` | Render findings as an interactive HTML presentation |
 
 ## Skills
 
@@ -25,8 +26,9 @@ This plugin provides two skills:
 ### mercury-render (document rendering)
 - **Skill file:** `skills/mercury-render/SKILL.md` — read this for rendering instructions
 - **References:** `skills/mercury-render/references/` — report structures, markdown templates
-- **Scripts:** `skills/mercury-render/scripts/` — Node.js rendering (docx, pptx)
-- **Assets:** `skills/mercury-render/assets/logos/` — IDX brand logos
+- **Scripts:** `skills/mercury-render/scripts/` — Node.js rendering (docx, pptx, html)
+- **Assets:** `skills/mercury-render/assets/` — IDX fonts, logos, and Word template
+- **Brand guide:** `skills/mercury-render/references/mercury-brand-guide.md`
 
 ## Governance
 

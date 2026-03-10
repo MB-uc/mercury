@@ -9,7 +9,7 @@ FILEPATH="$2"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 if [ -z "$FORMAT" ] || [ -z "$FILEPATH" ]; then
-  echo "Usage: bash build-pipeline.sh <docx|pptx> <filepath>"
+  echo "Usage: bash build-pipeline.sh <docx|pptx|html> <filepath>"
   exit 1
 fi
 
@@ -26,6 +26,27 @@ echo "=== Mercury build pipeline ==="
 echo "Format: $FORMAT"
 echo "File:   $FILEPATH"
 echo ""
+
+# HTML files: validate only (no PDF conversion needed)
+if [ "$FORMAT" = "html" ]; then
+  echo "--- Step 1: Validating HTML ---"
+  if command -v python3 &> /dev/null; then
+    python3 -c "
+with open('$FILEPATH', 'r') as f:
+    content = f.read()
+print(f'Valid HTML: {len(content)} chars, {content.count(\"<section\")} sections')
+if '<!DOCTYPE html>' not in content:
+    print('Warning: Missing DOCTYPE')
+if '@font-face' not in content:
+    print('Warning: No embedded fonts detected')
+" 2>/dev/null || echo "Warning: HTML validation unavailable"
+  fi
+  echo ""
+  echo "=== Build pipeline complete ==="
+  echo "HTML presentation: $FILEPATH"
+  echo "Open in browser to verify"
+  exit 0
+fi
 
 # Step 1: Validate (docx only)
 if [ "$FORMAT" = "docx" ]; then

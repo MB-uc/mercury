@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="537" height="160" viewBox="0 0 537 160">
+  <g>
+    <path d="m62,160H0S0,0,0,0h62s0,160,0,160Z" style="fill: #fff; stroke-width: 0px;"/>
+    <path d="m276,80c0,54.4-36.18,80-75.13,80h-119.87s0-160,0-160h119.87c38.96,0,75.13,25.6,75.13,80Zm-61.49.28c0-28.13-19.69-28.28-31.91-28.28h-39.6v56h39.6c12.22,0,31.91.41,31.91-27.72Z" style="fill: #fff; stroke-width: 0px;"/>
+    <path d="m337.5,80L259.99,0h84.45s35.28,39.01,35.28,39.01L415,0h85s-78.06,80-78.06,80l78.06,80h-84.72s-35.28-39.01-35.28-39.01l-35.83,39.01h-84.17s77.5-80,77.5-80Z" style="fill: #fff; stroke-width: 0px;"/>
+  </g>
+  <g>
+    <path d="m507,0h12.89v2.46h-4.95v11.54h-2.99V2.46h-4.95V0Z" style="fill: #fff; stroke-width: 0px;"/>
+    <path d="m528.91,10.7l4.41-10.7h3.68v14h-2.98V4.74l-3.85,9.26h-2.53l-3.85-9.24v9.24h-2.99V0h3.68l4.43,10.7Z" style="fill: #fff; stroke-width: 0px;"/>
+  </g>
+</svg>

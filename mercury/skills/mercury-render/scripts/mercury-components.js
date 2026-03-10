@@ -1,7 +1,8 @@
 /**
- * Mercury Components — reusable docx-js building blocks for Mercury-branded documents.
+ * Mercury Components v3.1 — reusable docx-js building blocks for Mercury-branded documents.
  *
- * Design system derived from IDX brand templates (IDX2024_core_v1.pptx, About us.dotx).
+ * Design system derived from IDX brand templates (IDX2024_core_v1.pptx, Word Generic A4).
+ * Uses IDX Sans as primary font with Arial fallback.
  *
  * Usage:
  *   const M = require('./mercury-components.js');
@@ -25,41 +26,41 @@ const {
 
 const COLORS = {
   // Core brand
-  LICORICE:       "12061A",   // Primary dark (near-black with purple tint)
-  FLORAL_WHITE:   "F7F6EE",   // Primary light / background
+  LICORICE:       "12061A",
+  FLORAL_WHITE:   "F7F6EE",
   PURE_BLACK:     "000000",
   PURE_WHITE:     "FFFFFF",
 
   // Accents
-  LEMON_LIME:     "EEFF00",   // Accent 1 — vivid yellow-green
-  ROSE:           "FF006F",   // Accent 2 — hot pink
-  AQUAMARINE:     "00FFC9",   // Accent 3 — bright teal
-  ORANGE:         "FF6500",   // Accent 4
-  GREEN:          "00FF00",   // Accent 5
-  BLUE:           "0068FF",   // Accent 6
-  HYPERLINK:      "00A6EB",   // Link blue
+  LEMON_LIME:     "EEFF00",
+  ROSE:           "FF006F",
+  AQUAMARINE:     "00FFC9",
+  ORANGE:         "FF6500",
+  GREEN:          "00FF00",
+  BLUE:           "0068FF",
+  HYPERLINK:      "FF006F",   // Rose — matches brand template
 
-  // Mercury product palette (derived from IDX)
-  MERCURY_BLUE:   "12061A",   // = Licorice — primary headings, cover bg
-  MERCURY_ACCENT: "FF006F",   // = Rose — accent lines, highlights
-  MERCURY_LIGHT:  "F7F6EE",   // = Floral White — backgrounds
-  MERCURY_GRAY:   "F5F5F5",   // Table zebra stripe
+  // Mercury product palette
+  MERCURY_BLUE:   "12061A",
+  MERCURY_ACCENT: "FF006F",
+  MERCURY_LIGHT:  "F7F6EE",
+  MERCURY_GRAY:   "F5F5F5",
 
   // Semantic
   WHITE:          "FFFFFF",
-  DARK:           "12061A",   // Body text = Licorice
-  MEDIUM:         "666666",   // Secondary text
-  HIGH_RED:       "CC3333",   // Priority: High
-  MED_AMBER:      "E8A317",   // Priority: Medium
-  LOW_GREEN:      "27AE60",   // Priority: Low
+  DARK:           "12061A",
+  MEDIUM:         "666666",
+  HIGH_RED:       "CC3333",
+  MED_AMBER:      "E8A317",
+  LOW_GREEN:      "27AE60",
 };
 
-// Font stack: IDX Sans is the brand font; Arial is the safe fallback.
-// The Word template uses IDX Sans at 8.5pt body. Since IDX Sans may not be
-// installed on all machines, we use Arial for programmatic docs to guarantee
-// consistent rendering. If IDX Sans is available, swap FONT_PRIMARY below.
-const FONT_PRIMARY = "Arial";
-const FONT_FALLBACK = "Arial";
+// IDX type family — brand fonts with safe fallbacks
+const FONT_PRIMARY  = "IDX Sans";       // Body copy, tables, general text
+const FONT_HEADING  = "IDX Sans";       // Headings (Bold weight via bold: true)
+const FONT_DISPLAY  = "IDX Headline";   // Cover page titles, display text
+const FONT_SERIF    = "IDX Serif";      // Pull quotes, product names
+const FONT_FALLBACK = "Arial";          // Safe fallback for all contexts
 
 const BORDER_THIN = { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" };
 const BORDERS = { top: BORDER_THIN, bottom: BORDER_THIN, left: BORDER_THIN, right: BORDER_THIN };
@@ -71,24 +72,24 @@ const PAGE_A4 = {
   size: { width: 11906, height: 16838 },
   margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
 };
-const CONTENT_WIDTH = 9026; // A4 minus 1-inch margins
+const CONTENT_WIDTH = 9026;
 
 const STYLES = {
   default: { document: { run: { font: FONT_PRIMARY, size: 22 } } },
   paragraphStyles: [
     {
       id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 28, bold: true, font: FONT_PRIMARY, color: COLORS.LICORICE },
+      run: { size: 32, bold: true, font: FONT_HEADING, color: COLORS.LICORICE },
       paragraph: { spacing: { before: 600, after: 240 }, outlineLevel: 0 },
     },
     {
       id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 24, bold: true, font: FONT_PRIMARY, color: COLORS.LICORICE },
+      run: { size: 26, bold: true, font: FONT_HEADING, color: COLORS.LICORICE },
       paragraph: { spacing: { before: 150, after: 160 }, outlineLevel: 1 },
     },
     {
       id: "Heading3", name: "Heading 3", basedOn: "Normal", next: "Normal", quickFormat: true,
-      run: { size: 20, bold: true, font: FONT_PRIMARY, color: COLORS.LICORICE },
+      run: { size: 20, bold: true, font: FONT_HEADING, color: COLORS.LICORICE },
       paragraph: { spacing: { before: 200, after: 100 }, outlineLevel: 2 },
     },
   ],
@@ -116,22 +117,30 @@ const NUMBERING = {
 };
 
 // ============================================================
-// LOGO HELPER
+// LOGO & FONT HELPERS
 // ============================================================
 
-/**
- * Get the IDX logo as a base64 data string for embedding in documents.
- * @param {"black"|"white"} variant - Logo colour variant
- * @param {"standard"|"tiny"} size - Logo size
- * @returns {Buffer|null} PNG buffer, or null if not found
- */
 function getLogoBuffer(variant = "black", size = "standard") {
-  const filename = size === "tiny"
-    ? `IDX-${variant}-tiny.png`
-    : `IDX-${variant}.png`;
+  const sizeMap = { tiny: "tiny", standard: "", large: "large" };
+  const suffix = sizeMap[size];
+  const filename = suffix ? `IDX-${variant}-${suffix}.png` : `IDX-${variant}.png`;
   const logoPath = path.join(__dirname, "..", "assets", "logos", filename);
   try {
     return fs.readFileSync(logoPath);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get font file buffer for embedding reference.
+ * @param {string} fontFilename - e.g. "IDXSans-Regular.otf"
+ * @returns {Buffer|null}
+ */
+function getFontBuffer(fontFilename) {
+  const fontPath = path.join(__dirname, "..", "assets", "fonts", fontFilename);
+  try {
+    return fs.readFileSync(fontPath);
   } catch {
     return null;
   }
@@ -141,11 +150,6 @@ function getLogoBuffer(variant = "black", size = "standard") {
 // TEXT & PARAGRAPH HELPERS
 // ============================================================
 
-/**
- * Create a TextRun with Mercury defaults.
- * @param {string} text - The text content
- * @param {object} opts - {size, color, bold, italics, font}
- */
 function t(text, opts = {}) {
   return new TextRun({
     text,
@@ -157,11 +161,6 @@ function t(text, opts = {}) {
   });
 }
 
-/**
- * Create a Paragraph with Mercury spacing defaults.
- * @param {Array|TextRun} children - TextRun(s) to include
- * @param {object} opts - {before, after, align, heading, pageBreakBefore, numbering}
- */
 function p(children, opts = {}) {
   const config = {
     children: Array.isArray(children) ? children : [children],
@@ -174,27 +173,22 @@ function p(children, opts = {}) {
   return new Paragraph(config);
 }
 
-/** Shortcut: H1 paragraph */
 function heading1(text, opts = {}) {
   return p([t(text)], { heading: HeadingLevel.HEADING_1, ...opts });
 }
 
-/** Shortcut: H2 paragraph */
 function heading2(text, opts = {}) {
   return p([t(text)], { heading: HeadingLevel.HEADING_2, ...opts });
 }
 
-/** Shortcut: H3 paragraph */
 function heading3(text, opts = {}) {
   return p([t(text)], { heading: HeadingLevel.HEADING_3, ...opts });
 }
 
-/** Shortcut: body text paragraph */
 function bodyText(text, opts = {}) {
   return p([t(text)], opts);
 }
 
-/** Shortcut: empty spacer paragraph */
 function spacer(before = 120, after = 0) {
   return p([t("")], { before, after });
 }
@@ -203,11 +197,6 @@ function spacer(before = 120, after = 0) {
 // TABLE HELPERS
 // ============================================================
 
-/**
- * Create a table cell.
- * @param {Array|TextRun} children - Content (TextRun or array of TextRuns/Paragraphs)
- * @param {object} opts - {width, fill, borders, vAlign}
- */
 function cell(children, opts = {}) {
   const paras = Array.isArray(children) ? children : [children];
   return new TableCell({
@@ -222,9 +211,6 @@ function cell(children, opts = {}) {
   });
 }
 
-/**
- * Create a header row cell (Licorice background, white text).
- */
 function hCell(text, width, fill) {
   return cell(
     [t(text, { bold: true, color: COLORS.WHITE, size: 20 })],
@@ -232,13 +218,6 @@ function hCell(text, width, fill) {
   );
 }
 
-/**
- * Create a standard data table with header row and alternating shading.
- * @param {string[]} headers - Column header labels
- * @param {Array[]} rows - 2D array of string cell values
- * @param {number[]} columnWidths - DXA widths for each column
- * @param {object} opts - {tableWidth, cellOpts(rowIdx, colIdx, value)}
- */
 function dataTable(headers, rows, columnWidths, opts = {}) {
   const tableWidth = opts.tableWidth || CONTENT_WIDTH;
   return new Table({
@@ -265,12 +244,6 @@ function dataTable(headers, rows, columnWidths, opts = {}) {
   });
 }
 
-/**
- * Create a gaps/priority table.
- * @param {Array} gaps - [{gap, section?, priority, applies?, detail}]
- * @param {number[]} columnWidths - column widths
- * @param {string[]} headers - column headers
- */
 function gapsTable(gaps, columnWidths, headers) {
   const cols = columnWidths || [800, 3226, 1000, 4000];
   const hdrs = headers || ["#", "Gap", "Priority", "Applies to"];
@@ -303,50 +276,50 @@ function gapsTable(gaps, columnWidths, headers) {
 // SECTION BUILDERS
 // ============================================================
 
-/**
- * Create a Mercury cover page section.
- * Uses Licorice background with white text for a premium feel.
- * @param {string} title - Main title (e.g. "Site audit")
- * @param {string} subtitle - Subtitle (e.g. "Inchcape plc")
- * @param {Array} meta - Array of [label, value] pairs
- * @param {object} opts - {thirdLine, taglines, lightCover}
- */
 function coverPage(title, subtitle, meta, opts = {}) {
-  // Cover page can be dark (Licorice bg) or light (Floral White bg)
   const isDark = !opts.lightCover;
   const titleColor = isDark ? COLORS.WHITE : COLORS.LICORICE;
   const subtitleColor = COLORS.ROSE;
   const metaLabelColor = COLORS.MEDIUM;
   const metaValueColor = isDark ? COLORS.WHITE : COLORS.DARK;
-  const taglineColor = isDark ? COLORS.MEDIUM : COLORS.MEDIUM;
+  const taglineColor = COLORS.MEDIUM;
 
   const children = [
-    // Top spacer
     spacer(2400),
-    // IDX brand mark
-    p([t("IDX", { size: 20, color: COLORS.ROSE, bold: true })], { before: 0, after: 80 }),
-    // Accent divider line (Rose)
-    new Table({
-      width: { size: CONTENT_WIDTH, type: WidthType.DXA },
-      columnWidths: [CONTENT_WIDTH],
-      rows: [new TableRow({
-        children: [new TableCell({
-          borders: {
-            top: BORDER_NONE,
-            bottom: { style: BorderStyle.SINGLE, size: 6, color: COLORS.ROSE },
-            left: BORDER_NONE,
-            right: BORDER_NONE,
-          },
-          width: { size: CONTENT_WIDTH, type: WidthType.DXA },
-          children: [p([t("")], { before: 0, after: 0 })],
-        })],
-      })],
-    }),
-    // Title
-    p([t(title, { size: 52, bold: true, color: titleColor })], { before: 400, after: 40 }),
-    // Subtitle
-    p([t(subtitle, { size: 36, color: subtitleColor })], { before: 0, after: 200 }),
   ];
+
+  // IDX logo
+  const logoVariant = isDark ? "white" : "black";
+  const logoBuf = getLogoBuffer(logoVariant, "tiny");
+  if (logoBuf) {
+    children.push(p([new ImageRun({ data: logoBuf, transformation: { width: 80, height: 21 } })], { before: 0, after: 200 }));
+  } else {
+    children.push(p([t("IDX", { size: 20, color: COLORS.ROSE, bold: true })], { before: 0, after: 80 }));
+  }
+
+  // Accent divider
+  children.push(new Table({
+    width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+    columnWidths: [CONTENT_WIDTH],
+    rows: [new TableRow({
+      children: [new TableCell({
+        borders: {
+          top: BORDER_NONE,
+          bottom: { style: BorderStyle.SINGLE, size: 6, color: COLORS.ROSE },
+          left: BORDER_NONE,
+          right: BORDER_NONE,
+        },
+        width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+        children: [p([t("")], { before: 0, after: 0 })],
+      })],
+    })],
+  }));
+
+  // Title — uses display font
+  children.push(p([t(title, { size: 56, bold: true, color: titleColor, font: FONT_DISPLAY })], { before: 400, after: 40 }));
+
+  // Subtitle
+  children.push(p([t(subtitle, { size: 36, color: subtitleColor, font: FONT_HEADING })], { before: 0, after: 200 }));
 
   // Optional third line
   if (opts.thirdLine) {
@@ -376,7 +349,7 @@ function coverPage(title, subtitle, meta, opts = {}) {
   ];
   children.push(spacer(1200));
   taglines.forEach(line => {
-    children.push(p([t(line, { size: 18, color: taglineColor, italics: true })]));
+    children.push(p([t(line, { size: 18, color: taglineColor, italics: true, font: FONT_SERIF })]));
   });
 
   return {
@@ -385,20 +358,23 @@ function coverPage(title, subtitle, meta, opts = {}) {
   };
 }
 
-/**
- * Create header and footer configuration for a content section.
- * @param {string} headerLeft - Left text (e.g. "Mercury")
- * @param {string} headerRight - Right text (e.g. "Inchcape plc | February 2026")
- */
 function contentSection(headerLeft, headerRight) {
+  // Header with logo
+  const logoBuffer = getLogoBuffer("black", "tiny");
+  const headerChildren = [
+    t("Mercury  ", { size: 16, color: COLORS.ROSE, bold: true, font: FONT_HEADING }),
+    t(`|  ${headerRight || headerLeft}`, { size: 16, color: COLORS.MEDIUM }),
+  ];
+  if (logoBuffer) {
+    headerChildren.push(new TextRun({ text: "    " }));
+    headerChildren.push(new ImageRun({ data: logoBuffer, transformation: { width: 48, height: 13 } }));
+  }
+
   return {
     properties: { page: PAGE_A4 },
     headers: {
       default: new Header({
-        children: [p([
-          t("Mercury  ", { size: 16, color: COLORS.ROSE, bold: true }),
-          t(`|  ${headerRight || headerLeft}`, { size: 16, color: COLORS.MEDIUM }),
-        ], { before: 0, after: 0 })],
+        children: [p(headerChildren, { before: 0, after: 0 })],
       }),
     },
     footers: {
@@ -409,7 +385,7 @@ function contentSection(headerLeft, headerRight) {
         ], { before: 0, after: 0, align: AlignmentType.RIGHT })],
       }),
     },
-    children: [], // Caller populates this
+    children: [],
   };
 }
 
@@ -417,10 +393,6 @@ function contentSection(headerLeft, headerRight) {
 // DOCUMENT BUILDER
 // ============================================================
 
-/**
- * Create a complete Mercury Document from sections.
- * @param {Array} sections - Array of section objects (from coverPage, contentSection, etc.)
- */
 function createDocument(sections) {
   return new Document({
     styles: STYLES,
@@ -429,11 +401,6 @@ function createDocument(sections) {
   });
 }
 
-/**
- * Build the document to a file.
- * @param {Document} doc - The document object
- * @param {string} outputPath - File path to write
- */
 async function build(doc, outputPath) {
   const buffer = await Packer.toBuffer(doc);
   fs.writeFileSync(outputPath, buffer);
@@ -448,20 +415,13 @@ async function build(doc, outputPath) {
 module.exports = {
   // Design system
   COLORS,
-  FONT_PRIMARY,
-  FONT_FALLBACK,
-  BORDERS,
-  BORDERS_NONE,
-  BORDER_THIN,
-  BORDER_NONE,
-  CELL_MARGINS,
-  PAGE_A4,
-  CONTENT_WIDTH,
-  STYLES,
-  NUMBERING,
+  FONT_PRIMARY, FONT_HEADING, FONT_DISPLAY, FONT_SERIF, FONT_FALLBACK,
+  BORDERS, BORDERS_NONE, BORDER_THIN, BORDER_NONE,
+  CELL_MARGINS, PAGE_A4, CONTENT_WIDTH,
+  STYLES, NUMBERING,
 
-  // Logos
-  getLogoBuffer,
+  // Logos & Fonts
+  getLogoBuffer, getFontBuffer,
 
   // Text and paragraphs
   t, p,
@@ -478,7 +438,7 @@ module.exports = {
   // Document
   createDocument, build,
 
-  // Re-exports from docx (so consumers don't need to import docx separately)
+  // Re-exports from docx
   HeadingLevel, AlignmentType, PageBreak, TextRun, Paragraph,
   Table, TableRow, TableCell, WidthType, ShadingType, BorderStyle,
   PageNumber, ImageRun,

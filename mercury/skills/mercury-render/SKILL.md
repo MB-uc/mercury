@@ -5,7 +5,7 @@ description: "Renders branded Mercury documents from structured audit data. Use 
 
 # Mercury render
 
-Produces branded documents from structured Mercury audit data. Supports three output formats: Word (.docx), PowerPoint (.pptx), and markdown (.md).
+Produces branded documents from structured Mercury audit data. Supports four output formats: Word (.docx), PowerPoint (.pptx), interactive HTML (.html), and markdown (.md).
 
 ## Setup (run once per session)
 
@@ -35,18 +35,28 @@ You can also use it standalone if you have structured findings from any source a
 mercury-render/
 ├── SKILL.md                        ← You are here
 ├── scripts/
-│   ├── mercury-components.js       ← Reusable docx-js building blocks (require this)
-│   ├── mercury-pptx.js             ← Reusable pptxgenjs building blocks (require this)
+│   ├── mercury-components.js       ← Reusable docx-js building blocks
+│   ├── mercury-pptx.js             ← Reusable pptxgenjs building blocks
+│   ├── mercury-html.js             ← Interactive HTML presentation builder
 │   └── build-pipeline.sh           ← Validate → convert → verify pipeline
 ├── references/
 │   ├── report-structures.md        ← Section order and content for each report type
-│   └── markdown-templates.md       ← Markdown output templates
+│   ├── markdown-templates.md       ← Markdown output templates
+│   └── mercury-brand-guide.md      ← IDX brand system reference
 └── assets/
-    └── logos/
-        ├── IDX-black.png             ← Logo for light backgrounds
-        ├── IDX-white.png             ← Logo for dark backgrounds
-        ├── IDX-black-tiny.png        ← Small logo for headers/footers
-        └── IDX-white-tiny.png        ← Small logo for dark headers
+    ├── fonts/
+    │   ├── IDXHeadline-Heavy.otf   ← Display font
+    │   ├── IDXSans-Bold.otf        ← Heading font
+    │   ├── IDXSans-Regular.otf     ← Body font
+    │   └── IDXSerif-Regular.otf    ← Quote/accent font
+    ├── logos/
+    │   ├── IDX-black.png           ← Logo for light backgrounds
+    │   ├── IDX-black-large.png     ← Large logo for covers
+    │   ├── IDX-white.png           ← Logo for dark backgrounds
+    │   ├── IDX-white-large.png     ← Large logo for dark covers
+    │   └── (tiny and SVG variants)
+    └── templates/
+        └── word-generic-a4.docx    ← IDX branded Word template
 ```
 
 ## How rendering works
@@ -206,6 +216,28 @@ const MP = require('./scripts/mercury-pptx.js');
 // - MP.build(pptx, outputPath)
 ```
 
+#### Interactive HTML presentation (.html)
+
+The HTML renderer at `scripts/mercury-html.js` produces self-contained browser presentations:
+
+```javascript
+const MH = require('./scripts/mercury-html.js');
+
+// MH exposes:
+// - MH.buildPresentation(reportData)  → complete HTML string
+// - MH.COLORS                         → IDX colour tokens
+// - MH.FONTS                          → IDX font family names
+
+const html = MH.buildPresentation(reportData);
+require('fs').writeFileSync('output.html', html);
+```
+
+HTML presentations include all brand fonts embedded as base64, so they render correctly on any machine without font installation. The dark theme (Licorice background) matches the PPTX master for visual consistency across formats.
+
+Optional data-driven sections:
+- **Treemap**: Include `reportData.sitemapData` (hierarchical structure from sitemap stage) to render a D3.js treemap
+- **Peer comparison matrix**: Include `reportData.comparisonMatrix` for interactive comparison tables
+
 #### Markdown (.md)
 
 For markdown output, see `references/markdown-templates.md` for the template structures. Markdown reports use the same section order as Word documents but with simple formatting — no component library needed.
@@ -220,9 +252,12 @@ bash scripts/build-pipeline.sh docx output.docx
 
 # For .pptx files:
 bash scripts/build-pipeline.sh pptx output.pptx
+
+# For .html files:
+bash scripts/build-pipeline.sh html output.html
 ```
 
-The pipeline validates the file, converts to PDF, extracts page images, and reports the page count. For .docx it validates with `python-docx` (inline); for .pptx it uses LibreOffice conversion.
+The pipeline validates the file, converts to PDF (docx/pptx), extracts page images, and reports the page count. For .docx it validates with `python-docx` (inline); for .pptx it uses LibreOffice conversion. For .html it validates structure and font embedding — no PDF conversion needed.
 
 Always visually verify at least the cover page, first content page, and a table page by reading the generated JPG images.
 
@@ -250,17 +285,24 @@ The full IDX palette also includes Orange (#FF6500), Green (#00FF00), Blue (#006
 
 ### Typography
 
-- **Brand font**: IDX Sans (custom, may not be installed on all machines)
-- **Fallback font**: Arial (used by default in programmatic docs for guaranteed rendering)
-- **To use IDX Sans**: Set `FONT_PRIMARY = "IDX Sans"` in mercury-components.js
-- **Body text**: 11pt (size: 22 in half-points)
-- **H1**: 14pt bold, Licorice (matches Word template: 14pt, bold, spaceBefore 600)
-- **H2**: 12pt bold, Licorice (matches Word template: 12pt, spaceBefore 150)
-- **H3**: 10pt bold, Licorice (matches Word template: 10pt, bold, spaceBefore 200)
-- **Table body**: 10pt (size: 20)
-- **Table header**: 10pt bold, white on Licorice
-- **Captions/meta**: 9pt (size: 18), MEDIUM
-- **Footer**: 8pt (size: 16), MEDIUM
+Mercury uses the IDX custom type family across all formats:
+
+| Font | Weight | Usage | Fallback |
+|------|--------|-------|----------|
+| **IDX Sans** | Regular | Body copy, table cells, meta text | Arial |
+| **IDX Sans** | Bold | Headings (H1-H3), table headers, emphasis | Arial Bold |
+| **IDX Headline** | Heavy | Cover page titles, display text (sparingly) | Arial Black |
+| **IDX Serif** | Regular | Pull quotes, product names (rare) | Georgia |
+
+Font files are in `assets/fonts/` (OTF format). For Word documents, the fonts are referenced by name — recipients need IDX Sans installed, or Word substitutes Arial automatically. For HTML presentations, fonts are embedded as base64 `@font-face` so no installation is needed.
+
+- **Body text**: 11pt IDX Sans Regular
+- **H1**: 16pt IDX Sans Bold, Licorice
+- **H2**: 13pt IDX Sans Bold, Licorice
+- **H3**: 10pt IDX Sans Bold, Licorice
+- **Cover title**: 28pt IDX Headline Heavy
+- **Table body**: 10pt IDX Sans Regular
+- **Table header**: 10pt IDX Sans Bold, white on Licorice
 
 ### Page layout (Word)
 
@@ -273,12 +315,14 @@ The full IDX palette also includes Orange (#FF6500), Green (#00FF00), Blue (#006
 ### Slide layout (PowerPoint)
 
 - **Slide size**: LAYOUT_WIDE (13.33" × 7.50") matching IDX core template
-- **Background**: Floral White (#F7F6EE) for content slides
-- **Title slides**: Licorice (#12061A) background
+- **Title slides**: Licorice (#12061A) background, Rose top bar, white IDX logo
+- **Content slides**: Licorice (#12061A) background (dark theme), Floral White text
 - **Section dividers**: Lemon Lime (#EEFF00) background
 - **Top accent bar**: Rose (#FF006F), 0.06" height
 - **Footer bar**: Licorice, 0.4" height, with "Mercury | Confidential" and "idx.inc"
-- **IDX logo**: White variant on dark slides (top-right), Black variant on light slides
+- **IDX logo**: White variant on all dark slides (content + title), black on Lemon Lime dividers
+- **Table headers**: Rose fill with white text (on dark background)
+- **Table body**: Alternating dark shades (#1A1025 / #12061A) with Floral White text
 
 ### Tables
 
@@ -304,10 +348,11 @@ The full IDX palette also includes Orange (#FF6500), Green (#00FF00), Blue (#006
 ### Logo usage
 
 The skill includes IDX logos in `assets/logos/`:
-- `IDX-black.png` — for light backgrounds (Word cover, content headers)
-- `IDX-white.png` — for dark backgrounds (PPTX title slides)
-- Tiny variants for header/footer placement
-- Use `M.getLogoBuffer("black"|"white")` in docx or `MP.getLogoPath("black"|"white")` in pptx
+- `IDX-black.png` / `IDX-black.svg` — for light backgrounds (Word cover, Lemon Lime dividers)
+- `IDX-white.png` / `IDX-white.svg` — for dark backgrounds (PPTX content + title slides, HTML)
+- `IDX-black-large.png` / `IDX-white-large.png` — large variants for cover pages
+- Tiny variants (`-tiny`) for header/footer placement
+- Use `M.getLogoBuffer("black"|"white")` in docx or `MP.getLogoPath("black"|"white", "large"|"tiny")` in pptx
 
 ## Important notes
 
