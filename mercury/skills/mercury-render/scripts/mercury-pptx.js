@@ -135,22 +135,13 @@ function createPresentation(title, author) {
       { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: LAYOUT.FOOTER_H, fill: { color: COLORS.LICORICE } } },
       // Footer divider line (subtle separation)
       { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: 0.01, fill: { color: COLORS.ROSE } } },
-      // Footer text
+      // Footer — Mercury branding in IDX Headline, Rose
       { text: {
-        text: "Mercury  |  Confidential",
+        text: "MERCURY",
         options: {
-          x: 0.6, y: LAYOUT.FOOTER_Y + 0.04, w: 5, h: 0.3,
-          fontSize: 8, fontFace: FONTS.BODY,
-          color: COLORS.PURE_WHITE,
-        },
-      }},
-      // Footer right — idx.inc
-      { text: {
-        text: "idx.inc",
-        options: {
-          x: 5.5, y: LAYOUT.FOOTER_Y + 0.04, w: 3, h: 0.3,
-          fontSize: 8, fontFace: FONTS.BODY, bold: true,
-          color: COLORS.PURE_WHITE, align: "center",
+          x: 0.6, y: LAYOUT.FOOTER_Y + 0.04, w: 3, h: 0.3,
+          fontSize: 9, fontFace: FONTS.DISPLAY,
+          color: COLORS.ROSE, bold: true,
         },
       }},
     ],
@@ -164,29 +155,33 @@ function createPresentation(title, author) {
       { rect: { x: 0, y: 0, w: LAYOUT.WIDTH, h: 0.06, fill: { color: COLORS.ROSE } } },
       { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: LAYOUT.FOOTER_H, fill: { color: COLORS.LICORICE } } },
       { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: 0.01, fill: { color: COLORS.ROSE } } },
+      // Footer — Mercury branding in IDX Headline, Rose
       { text: {
-        text: "Mercury  |  Confidential",
+        text: "MERCURY",
         options: {
-          x: 0.6, y: LAYOUT.FOOTER_Y + 0.04, w: 5, h: 0.3,
-          fontSize: 8, fontFace: FONTS.BODY,
-          color: COLORS.PURE_WHITE,
-        },
-      }},
-      { text: {
-        text: "idx.inc",
-        options: {
-          x: 5.5, y: LAYOUT.FOOTER_Y + 0.04, w: 3, h: 0.3,
-          fontSize: 8, fontFace: FONTS.BODY, bold: true,
-          color: COLORS.PURE_WHITE, align: "center",
+          x: 0.6, y: LAYOUT.FOOTER_Y + 0.04, w: 3, h: 0.3,
+          fontSize: 9, fontFace: FONTS.DISPLAY,
+          color: COLORS.ROSE, bold: true,
         },
       }},
     ],
   });
 
-  // ---- SECTION divider master (Lemon Lime background — unchanged) ----
+  // ---- SECTION divider masters ----
+  // Rose variant (default)
   pptx.defineSlideMaster({
     title: "MERCURY_SECTION",
-    background: { color: COLORS.LEMON_LIME },
+    background: { color: COLORS.ROSE },
+    objects: [
+      { rect: { x: 0, y: 0, w: LAYOUT.WIDTH, h: 0.06, fill: { color: COLORS.LICORICE } } },
+      { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: LAYOUT.FOOTER_H, fill: { color: COLORS.LICORICE } } },
+    ],
+  });
+
+  // Blue variant
+  pptx.defineSlideMaster({
+    title: "MERCURY_SECTION_BLUE",
+    background: { color: COLORS.BLUE },
     objects: [
       { rect: { x: 0, y: 0, w: LAYOUT.WIDTH, h: 0.06, fill: { color: COLORS.LICORICE } } },
       { rect: { x: 0, y: LAYOUT.FOOTER_Y, w: LAYOUT.WIDTH, h: LAYOUT.FOOTER_H, fill: { color: COLORS.LICORICE } } },
@@ -212,9 +207,9 @@ function titleSlide(pptx, title, subtitle, meta, opts = {}) {
   const slide = pptx.addSlide({ masterName: "MERCURY_TITLE" });
 
   // IDX logo (white variant on dark bg, top-right)
-  const logoPath = getLogoPath("white", "tiny");
+  const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.3, w: 1.2, h: 0.4 });
+    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
   }
 
   // Title — uses display font
@@ -275,41 +270,51 @@ function titleSlide(pptx, title, subtitle, meta, opts = {}) {
 }
 
 /**
- * Add a section divider slide (Lemon Lime — unchanged).
+ * Add a section divider slide.
  * @param {pptxgen} pptx
  * @param {string} heading - Section heading
  * @param {string} subheading - Optional subheading
+ * @param {object} opts - {variant: "rose"|"blue"} — defaults to "rose"
  */
-function sectionSlide(pptx, heading, subheading) {
-  const slide = pptx.addSlide({ masterName: "MERCURY_SECTION" });
+function sectionSlide(pptx, heading, subheading, opts = {}) {
+  const variant = (opts && opts.variant) || "rose";
+  const masterName = variant === "blue" ? "MERCURY_SECTION_BLUE" : "MERCURY_SECTION";
+  const slide = pptx.addSlide({ masterName });
 
-  // Black IDX logo on Lemon Lime background
-  const logoPath = getLogoPath("black", "tiny");
+  // White IDX logo on dark accent background
+  const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.3, w: 1.2, h: 0.4 });
+    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
   }
 
   slide.addText(heading, {
     x: 0.6, y: 2.5, w: 12, h: 1.0,
     fontSize: 36, fontFace: FONTS.HEADING,
-    color: COLORS.LICORICE, bold: true,
+    color: COLORS.PURE_WHITE, bold: true,
     margin: 0,
   });
 
-  // Licorice underline
+  // White underline
   slide.addShape(pptx.shapes.LINE, {
     x: 0.6, y: 3.55, w: 2.5, h: 0,
-    line: { color: COLORS.LICORICE, width: 3 },
+    line: { color: COLORS.PURE_WHITE, width: 3 },
   });
 
   if (subheading) {
     slide.addText(subheading, {
       x: 0.6, y: 3.7, w: 12, h: 0.5,
       fontSize: 16, fontFace: FONTS.BODY,
-      color: COLORS.LICORICE,
+      color: COLORS.PURE_WHITE,
       margin: 0,
     });
   }
+
+  // Mercury branding in footer area
+  slide.addText("MERCURY", {
+    x: 0.6, y: LAYOUT.FOOTER_Y + 0.04, w: 3, h: 0.3,
+    fontSize: 9, fontFace: FONTS.DISPLAY,
+    color: COLORS.ROSE, bold: true,
+  });
 
   return slide;
 }
@@ -325,9 +330,9 @@ function contentSlide(pptx, heading, body, opts = {}) {
   const slide = pptx.addSlide({ masterName: "MERCURY_CONTENT" });
 
   // White IDX logo on dark background
-  const logoPath = getLogoPath("white", "tiny");
+  const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.3, w: 1.0, h: 0.3 });
+    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
   }
 
   // Heading — Pure White on dark bg
@@ -367,9 +372,9 @@ function bulletSlide(pptx, heading, bullets, opts = {}) {
   const slide = pptx.addSlide({ masterName: "MERCURY_CONTENT" });
 
   // White IDX logo
-  const logoPath = getLogoPath("white", "tiny");
+  const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.3, w: 1.0, h: 0.3 });
+    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
   }
 
   slide.addText(heading, {
@@ -439,9 +444,9 @@ function tableSlide(pptx, heading, headers, rows, opts = {}) {
   const slide = pptx.addSlide({ masterName: "MERCURY_CONTENT" });
 
   // White IDX logo
-  const logoPath = getLogoPath("white", "tiny");
+  const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.3, w: 1.0, h: 0.3 });
+    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
   }
 
   slide.addText(heading, {
@@ -516,9 +521,9 @@ function twoColumnSlide(pptx, heading, leftContent, rightContent, opts = {}) {
   const slide = pptx.addSlide({ masterName: "MERCURY_CONTENT" });
 
   // White IDX logo
-  const logoPath = getLogoPath("white", "tiny");
+  const logoPath = getLogoPath("white", "standard");
   if (logoPath) {
-    slide.addImage({ path: logoPath, x: 11.8, y: 0.3, w: 1.0, h: 0.3 });
+    slide.addImage({ path: logoPath, x: 11.8, y: 0.15, w: 1.2, h: 0.36 });
   }
 
   slide.addText(heading, {

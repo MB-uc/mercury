@@ -38,6 +38,7 @@ mercury-render/
 │   ├── mercury-components.js       ← Reusable docx-js building blocks
 │   ├── mercury-pptx.js             ← Reusable pptxgenjs building blocks
 │   ├── mercury-html.js             ← Interactive HTML presentation builder
+│   ├── mercury-adapter.js          ← Artefact → reportData transformer (all stages)
 │   └── build-pipeline.sh           ← Validate → convert → verify pipeline
 ├── references/
 │   ├── report-structures.md        ← Section order and content for each report type
@@ -103,11 +104,41 @@ Mercury has three report types, each with a different document structure:
 
 See `references/report-structures.md` for the full section-by-section breakdown of each type.
 
-### Step 2: Prepare structured data
+### Step 2: Prepare structured data (use the adapter)
 
-Before rendering, organise your findings into a data object. The component library expects
-this shape. **vNext:** The `claims` array from the artefact must be included; findings
-reference claim IDs.
+The adapter at `scripts/mercury-adapter.js` transforms one or more stage artefact JSONs into the unified `reportData` shape consumed by all three renderers. **Always use the adapter** — do not manually map artefact fields.
+
+```javascript
+const { buildReportData, loadAndBuild } = require('./scripts/mercury-adapter.js');
+
+// Option A: Load from files by naming convention
+const reportData = loadAndBuild('/path/to/artefacts', 'company-name', {
+  sector: "Business Services",
+  index: "FTSE 100",
+});
+
+// Option B: Pass artefact objects directly (any combination of stages)
+const reportData = buildReportData({
+  brief: briefArtefact,       // optional
+  compete: competeArtefact,   // optional
+  sitemap: sitemapArtefact,   // optional
+  meeting: meetingArtefact,   // optional
+}, { sector: "...", index: "..." });
+
+// Then pass reportData to any renderer
+```
+
+The adapter handles all field mapping from artefact schema to renderer schema:
+- `findings` (severity=positive) → `strengths`
+- `gap_analysis` (status=searched_not_found) → `gaps`
+- `synthesis.priorities` → `talkingPoints`
+- `citations` (type=web_page) → `pagesAnalysed`
+- `comparison_matrix` → `comparisonMatrix` (compete stage)
+- `sitemap_data` / `recommended_architecture` → `sitemapData` (sitemap stage)
+
+Sections only appear when their stage data exists. The report type is auto-detected from which stages are provided.
+
+The full `reportData` schema expected by the renderers is below. **vNext:** The `claims` array from the artefact must be included; findings reference claim IDs.
 
 ```javascript
 const reportData = {

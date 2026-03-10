@@ -381,6 +381,7 @@ function renderMethodology(data) {
 // ============================================================
 
 function buildNav(data) {
+  const logo = embedLogo("IDX-white-tiny.png");
   const sections = [
     { id: "hero", label: data.subtitle || "Cover" },
     { id: "executive-summary", label: "Executive summary" },
@@ -396,15 +397,16 @@ function buildNav(data) {
   if (data.methodology) sections.push({ id: "methodology", label: "Methodology" });
 
   const links = sections.map(s => `<a href="#${s.id}" class="nav-link" data-section="${s.id}">${escapeHtml(s.label)}</a>`).join("\n");
+  const logoImg = logo ? `<img src="${logo}" alt="IDX" class="nav-logo">` : "";
 
   return `
   <nav class="sidebar-nav">
     <div class="nav-brand">
-      <span class="nav-mercury">Mercury</span>
+      ${logoImg}
     </div>
     <div class="nav-links">${links}</div>
     <div class="nav-footer">
-      <span class="nav-confidential">Confidential</span>
+      <span class="nav-mercury">Mercury</span>
     </div>
   </nav>`;
 }
@@ -470,35 +472,36 @@ body {
 
 /* ============ NAV ============ */
 .sidebar-nav {
-  position: fixed; top: 0; left: 0; width: 220px; height: 100vh;
-  background: ${COLORS.PURE_BLACK}; border-right: 1px solid ${COLORS.CARD_BORDER};
-  display: flex; flex-direction: column; z-index: 100;
-  padding: 2rem 0;
+  position: fixed; top: 0; left: 0; right: 0; height: 52px;
+  background: ${COLORS.PURE_BLACK}; border-bottom: 1px solid ${COLORS.CARD_BORDER};
+  display: flex; align-items: center; z-index: 100;
+  padding: 0 1.5rem; gap: 1.5rem;
 }
-.nav-brand { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid ${COLORS.CARD_BORDER}; }
-.nav-mercury { font-family: ${FONTS.HEADING}; font-weight: 700; font-size: 1rem; color: ${COLORS.ROSE}; letter-spacing: 0.05em; }
-.nav-links { flex: 1; overflow-y: auto; padding: 1rem 0; }
+.nav-brand { padding: 0; border-bottom: none; flex-shrink: 0; display: flex; align-items: center; gap: 0.5rem; }
+.nav-logo { height: 16px; opacity: 1; }
+.nav-mercury { font-family: ${FONTS.DISPLAY}; font-weight: 900; font-size: 0.7rem; color: ${COLORS.ROSE}; letter-spacing: 0.08em; text-transform: uppercase; }
+.nav-links { flex: 1; overflow-x: auto; overflow-y: hidden; display: flex; align-items: center; gap: 0.25rem; padding: 0; white-space: nowrap; }
 .nav-link {
-  display: block; padding: 0.5rem 1.5rem; font-size: 0.8rem; color: ${COLORS.MEDIUM};
-  text-decoration: none; transition: all 0.2s; border-left: 2px solid transparent;
+  display: inline-block; padding: 0.4rem 0.75rem; font-size: 0.75rem; color: ${COLORS.FLORAL_WHITE};
+  text-decoration: none; transition: all 0.2s; border-bottom: 2px solid transparent; border-left: none;
 }
 .nav-link:hover, .nav-link.active {
-  color: ${COLORS.FLORAL_WHITE}; border-left-color: ${COLORS.ROSE}; background: rgba(255,255,255,0.03);
+  color: ${COLORS.FLORAL_WHITE}; border-bottom-color: ${COLORS.ROSE}; border-left-color: transparent; background: none;
 }
-.nav-footer { padding: 1rem 1.5rem; border-top: 1px solid ${COLORS.CARD_BORDER}; }
-.nav-confidential { font-size: 0.7rem; color: ${COLORS.MEDIUM}; text-transform: uppercase; letter-spacing: 0.1em; }
+.nav-footer { flex-shrink: 0; padding: 0; border-top: none; display: flex; align-items: center; gap: 0.4rem; }
+
 
 /* ============ MAIN CONTENT ============ */
-main { margin-left: 220px; }
+main { margin-left: 0; margin-top: 52px; }
 
 /* ============ HERO ============ */
 .hero {
   min-height: 100vh; display: flex; align-items: flex-end;
   padding: 4rem 5rem; position: relative;
-  background: linear-gradient(170deg, #0a0412 0%, ${COLORS.LICORICE} 50%, #1a0825 100%);
+  background: ${COLORS.LICORICE};
 }
 .hero-inner { max-width: 800px; }
-.hero-logo { height: 24px; margin-bottom: 2rem; opacity: 0.7; }
+.hero-logo { height: 24px; margin-bottom: 2rem; opacity: 1; }
 .hero-accent { width: 60px; height: 3px; background: ${COLORS.ROSE}; margin-bottom: 1.5rem; }
 .hero-title {
   font-family: ${FONTS.DISPLAY}; font-weight: 900; font-size: 3.5rem;
@@ -600,8 +603,7 @@ main { margin-left: 220px; }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 900px) {
-  .sidebar-nav { display: none; }
-  main { margin-left: 0; }
+  .sidebar-nav { overflow-x: auto; }
   .hero { padding: 2rem; }
   .content-section { padding: 2rem; }
   .hero-title { font-size: 2.2rem; }
@@ -611,7 +613,7 @@ main { margin-left: 220px; }
 /* ============ PRINT ============ */
 @media print {
   .sidebar-nav { display: none; }
-  main { margin-left: 0; }
+  main { margin-top: 0; }
   .hero { min-height: auto; page-break-after: always; }
   .content-section { page-break-inside: avoid; padding: 2rem 0; }
   body { background: white; color: #12061A; }
