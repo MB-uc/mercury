@@ -3,14 +3,11 @@
   "owner": {
     "name": "IDX"
   },
-  "metadata": {
-    "description": "IDX Mercury tools for consultant engagement preparation"
-  },
   "plugins": [
     {
       "name": "mercury",
       "source": "./mercury",
-      "description": "Mercury v3 - IDX consultant engagement preparation"
+      "description": "Mercury v3 — IDX consultant engagement preparation"
     }
   ]
 }
