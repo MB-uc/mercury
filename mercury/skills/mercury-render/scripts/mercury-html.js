@@ -270,7 +270,7 @@ function renderTreemap(data) {
     <h2>Recommended site architecture</h2>
     <div id="treemap-container"></div>
     <script>
-    (function() {
+    document.addEventListener('DOMContentLoaded', function() {
       const treeData = ${treeJson};
       const container = document.getElementById('treemap-container');
       const width = container.clientWidth;
@@ -345,7 +345,7 @@ function renderTreemap(data) {
         .attr('font-weight', 'bold')
         .attr('font-family', ${JSON.stringify(FONTS.HEADING)})
         .attr('fill', '${COLORS.FLORAL_WHITE}');
-    })();
+    });
     </script>
   </section>`;
 }
@@ -512,6 +512,7 @@ function buildPresentation(data) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(data.title)} — ${escapeHtml(data.subtitle)} | Mercury</title>
+${d3Script}
 <style>
 ${fontFaces}
 
@@ -726,7 +727,6 @@ ${methodology}
 ${documents}
 </main>
 
-${d3Script}
 <script>
 // Scroll-triggered fade-in
 const observer = new IntersectionObserver((entries) => {

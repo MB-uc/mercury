@@ -27,19 +27,56 @@ echo "Format: $FORMAT"
 echo "File:   $FILEPATH"
 echo ""
 
-# HTML files: validate only (no PDF conversion needed)
+# HTML files: validate and smoke test
 if [ "$FORMAT" = "html" ]; then
   echo "--- Step 1: Validating HTML ---"
   if command -v python3 &> /dev/null; then
-    python3 -c "
-with open('$FILEPATH', 'r') as f:
+    python3 - "$FILEPATH" << 'PYEOF'
+import sys, re
+
+filepath = sys.argv[1]
+with open(filepath, 'r') as f:
     content = f.read()
-print(f'Valid HTML: {len(content)} chars, {content.count(\"<section\")} sections')
+print(f'Size: {len(content)} chars, {content.count("<section")} sections')
+
+errors = []
+warnings = []
+
 if '<!DOCTYPE html>' not in content:
-    print('Warning: Missing DOCTYPE')
+    errors.append('Missing DOCTYPE')
 if '@font-face' not in content:
-    print('Warning: No embedded fonts detected')
-" 2>/dev/null || echo "Warning: HTML validation unavailable"
+    warnings.append('No embedded fonts detected')
+
+# D3 load order: d3.min.js must appear before <section id="sitemap">
+if '<section id="sitemap"' in content:
+    d3_pos = content.find('d3.min.js')
+    sitemap_pos = content.find('<section id="sitemap"')
+    if d3_pos == -1:
+        errors.append('D3 script tag missing but sitemap section present')
+    elif d3_pos > sitemap_pos:
+        errors.append('D3 script loaded AFTER sitemap section — treemap will be blank')
+
+# All nav links must have matching sections
+for sec_id in re.findall(r'data-section="([^"]+)"', content):
+    if f'<section id="{sec_id}"' not in content:
+        errors.append(f'Nav link data-section="{sec_id}" has no matching section')
+
+# No completely empty sections (content beyond h2)
+for sec_id in re.findall(r'<section id="([^"]+)"', content):
+    match = re.search(f'<section id="{sec_id}"[^>]*>(.*?)</section>', content, re.DOTALL)
+    if match:
+        inner = re.sub(r'<h2[^>]*>.*?</h2>', '', match.group(1), flags=re.DOTALL).strip()
+        if not inner:
+            warnings.append(f'Section #{sec_id} is empty (no content beyond h2)')
+
+for e in errors:
+    print(f'ERROR: {e}')
+for w in warnings:
+    print(f'Warning: {w}')
+if errors:
+    sys.exit(1)
+print('Smoke tests passed')
+PYEOF
   fi
   echo ""
   echo "=== Build pipeline complete ==="
@@ -51,7 +88,6 @@ fi
 # Step 1: Validate (docx only)
 if [ "$FORMAT" = "docx" ]; then
   echo "--- Step 1: Validating ---"
-  # python-docx validation: check the file can be opened
   python3 -c "
 try:
     from docx import Document

@@ -137,14 +137,41 @@ function extractComparisonData(competeArtefact) {
   if (competeArtefact.companyA) result.companyA = competeArtefact.companyA;
   if (competeArtefact.companyB) result.companyB = competeArtefact.companyB;
 
-  // Comparison matrix — may be at top level or in synthesis
+  // Comparison matrix — may be at top level or in synthesis.
+  // Accepts two formats:
+  //   (a) Array: [{dimension, a, b, edge}, ...] — expected format
+  //   (b) Object: {dimensions: [...], companies: {A: {...}, B: {...}}} — natural authoring format
   if (competeArtefact.comparison_matrix) {
-    result.comparisonMatrix = competeArtefact.comparison_matrix.map(row => ({
-      dimension: row.dimension || row.category || "",
-      a: row.a || row.company_a || "",
-      b: row.b || row.company_b || "",
-      edge: row.edge || "",
-    }));
+    const matrix = competeArtefact.comparison_matrix;
+    if (Array.isArray(matrix)) {
+      result.comparisonMatrix = matrix.map(row => ({
+        dimension: row.dimension || row.category || "",
+        a: row.a || row.company_a || "",
+        b: row.b || row.company_b || "",
+        edge: row.edge || "",
+      }));
+    } else if (matrix && typeof matrix === "object" && Array.isArray(matrix.dimensions)) {
+      // Object format: extract company names from keys, map dimensions to rows
+      const companyKeys = Object.keys(matrix.companies || {});
+      const keyA = companyKeys[0] || "";
+      const keyB = companyKeys[1] || "";
+      const companiesA = (matrix.companies || {})[keyA] || {};
+      const companiesB = (matrix.companies || {})[keyB] || {};
+      if (!result.companyA) result.companyA = keyA;
+      if (!result.companyB) result.companyB = keyB;
+      result.comparisonMatrix = matrix.dimensions.map(dim => {
+        const dimName = typeof dim === "string" ? dim : (dim.name || dim.dimension || "");
+        const rowA = companiesA[dimName] || {};
+        const rowB = companiesB[dimName] || {};
+        return {
+          dimension: dimName,
+          a: rowA.summary || rowA.notes || String(rowA.score || ""),
+          b: rowB.summary || rowB.notes || String(rowB.score || ""),
+          edge: rowA.edge || rowB.edge || (typeof dim === "object" ? dim.edge || "" : ""),
+        };
+      });
+    }
+    // If neither format is recognised, skip silently (no crash)
   }
 
   // Summary ratings

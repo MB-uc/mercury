@@ -372,6 +372,9 @@ async function renderStage(config) {
   const result = { files: {}, hub: null, manifest: null };
   const timestamp = new Date().toISOString();
 
+  // Attach documentsTab so all rendered formats (not just the hub) include it
+  reportData.documentsTab = buildDocumentsTabData(manifest);
+
   // Render requested formats
   for (const fmt of formats) {
     const filename = `${slug}-${stage}.${fmt === "html" ? "html" : fmt}`;
@@ -407,11 +410,10 @@ async function renderStage(config) {
   }
 
   // Always rebuild the cumulative HTML hub
+  // (documentsTab was already set above, so reportData is ready to use directly)
   const hubPath = path.join(dir, `${slug}-mercury-hub.html`);
-  const hubData = Object.assign({}, reportData, {
-    documentsTab: buildDocumentsTabData(manifest),
-  });
-  renderHTML(hubData, hubPath);
+  reportData.documentsTab = buildDocumentsTabData(manifest); // refresh after manifest save
+  renderHTML(reportData, hubPath);
   result.hub = hubPath;
   manifest.hub_path = hubPath;
 
