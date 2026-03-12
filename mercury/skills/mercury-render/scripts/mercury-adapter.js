@@ -90,7 +90,7 @@ function buildMethodology(artefact) {
   const claimCount = (artefact.claims || []).length;
   const generated = artefact.generated_at || "unknown";
   const limitations = (artefact.limitations || []);
-  let text = `Mercury v3 automated audit. Capabilities used: ${caps}. Claims: ${claimCount}. Generated: ${generated}.`;
+  let text = `Mercury v6 automated audit. Capabilities used: ${caps}. Claims: ${claimCount}. Generated: ${generated}.`;
   if (limitations.length > 0) {
     text += "\n\nLimitations:\n" + limitations.map(l => `- ${l}`).join("\n");
   }
@@ -103,6 +103,7 @@ function buildMethodology(artefact) {
 function determineReportType(stages) {
   if (stages.compete) return "peer_comparison";
   if (stages.sitemap) return "deep_dive";
+  if (stages.ms_findings) return "deep_dive";
   return "quick_audit";
 }
 
@@ -115,6 +116,10 @@ function countPages(stages) {
     if (artefact && artefact.citations) {
       count += artefact.citations.filter(c => c.type === "web_page").length;
     }
+  }
+  // ms-findings uses evidence_loaded instead of citations
+  if (stages.ms_findings && stages.ms_findings.evidence_loaded) {
+    count += stages.ms_findings.evidence_loaded.pages_loaded || 0;
   }
   return count;
 }
@@ -249,6 +254,88 @@ function extractMeetingData(meetingArtefact) {
 }
 
 // ============================================================
+// MS-FINDINGS STAGE EXTRACTORS (Mercury Strategy pipeline)
+// ============================================================
+
+/**
+ * Extract strengths from ms-findings: findings where the implication
+ * describes something positive (no severity marker = strength pattern).
+ * In ms-findings, there's no severity="positive" — instead, findings
+ * that identify present capabilities are strengths.
+ */
+function extractMsFindings(artefact) {
+  const findings = artefact.findings || [];
+  return findings.map(f => ({
+    title: f.theme || "",
+    detail: f.implication || "",
+    severity: f.severity || "moderate",
+    classification: f.classification || "INFERENCE",
+    finding_id: f.finding_id || "",
+    audience_impact: f.audience_impact || [],
+    claim_ids: f.claim_ids || [],
+  }));
+}
+
+/**
+ * Extract gaps from ms-findings gap summary
+ */
+function extractMsGaps(artefact) {
+  return (artefact.gaps || []).map(g => ({
+    gap: g.description || "",
+    applies: g.section || "",
+    section: g.scope || "",
+    priority: g.severity === "significant" ? "High" : g.severity === "moderate" ? "Medium" : "Low",
+    detail: g.description || "",
+    claim_ids: g.claim_ids || [],
+  }));
+}
+
+/**
+ * Extract talking points from ms-findings strategic implications
+ */
+function extractMsImplications(artefact) {
+  const implications = (artefact.synthesis && artefact.synthesis.implications) || [];
+  return implications.map((imp, i) => ({
+    title: typeof imp === "string" ? imp.slice(0, 80) : (imp.title || imp.statement || ""),
+    detail: typeof imp === "string" ? imp : (imp.detail || imp.rationale || imp.statement || ""),
+    priority: implications.length - i,
+    claim_ids: (typeof imp === "object" && imp.claim_ids) || [],
+  }));
+}
+
+/**
+ * Extract pages analysed from ms-findings evidence_loaded
+ */
+function extractMsPagesAnalysed(artefact) {
+  // ms-findings doesn't have citations in the same format
+  // Build from evidence_loaded metadata if available
+  const loaded = artefact.evidence_loaded || {};
+  const pages = loaded.pages_loaded || 0;
+  const docs = loaded.documents_loaded || 0;
+  // Return a summary row rather than per-page detail
+  if (pages > 0 || docs > 0) {
+    return [[`${pages} pages, ${docs} documents`, "crawl evidence", "loaded from ms-crawl"]];
+  }
+  return [];
+}
+
+/**
+ * Build methodology from ms-findings artefact
+ */
+function buildMsMethodology(artefact) {
+  const loaded = artefact.evidence_loaded || {};
+  const claimCount = (artefact.claims || []).length;
+  const findingCount = (artefact.findings || []).length;
+  const gapCount = (artefact.gaps || []).length;
+  const limitations = artefact.limitations || [];
+  let text = `Mercury Strategy pipeline. Evidence: ${loaded.pages_loaded || 0} pages, ${loaded.documents_loaded || 0} documents. Claims: ${claimCount}. Findings: ${findingCount}. Gaps: ${gapCount}.`;
+  if (limitations.length > 0) {
+    text += "\n\nLimitations:\n" + limitations.map(l => typeof l === "string" ? `- ${l}` : `- ${l.description || l}`).join("\n");
+  }
+  return text;
+}
+
+// ============================================================
 // MAIN ADAPTER
 // ============================================================
 
@@ -262,7 +349,7 @@ function extractMeetingData(meetingArtefact) {
  */
 function buildReportData(stages, opts = {}) {
   // Use the first available artefact for shared metadata
-  const primary = stages.brief || stages.compete || stages.sitemap || stages.meeting;
+  const primary = stages.brief || stages.compete || stages.sitemap || stages.meeting || stages.ms_findings;
   if (!primary) throw new Error("At least one stage artefact is required");
 
   const company = primary.company || primary.entity || "Unknown";
@@ -406,6 +493,72 @@ function buildReportData(stages, opts = {}) {
     reportData.claims = reportData.claims.concat(m.claims || []);
   }
 
+  // ---- MS-FINDINGS stage (Mercury Strategy pipeline) ----
+  if (stages.ms_findings) {
+    const msf = stages.ms_findings;
+
+    // Executive summary from synthesis
+    if (msf.synthesis && msf.synthesis.executive_summary) {
+      reportData.executiveSummary = msf.synthesis.executive_summary;
+    } else if (!reportData.executiveSummary) {
+      // Build from implications
+      const implications = extractMsImplications(msf);
+      if (implications.length > 0) {
+        reportData.executiveSummary = implications.map(i => i.detail).join("\n\n");
+      }
+    }
+
+    // Split findings into strengths (positive signals) and issues
+    const allFindings = extractMsFindings(msf);
+    // Findings that don't identify a gap pattern are treated as strengths
+    // This is a heuristic — ms-findings doesn't have severity="positive"
+    // We use the finding classification and content to determine
+    const msStrengths = allFindings.filter(f =>
+      f.detail.toLowerCase().includes("strong") ||
+      f.detail.toLowerCase().includes("effective") ||
+      f.detail.toLowerCase().includes("comprehensive") ||
+      f.severity === "minor"
+    );
+    const msIssues = allFindings.filter(f => !msStrengths.includes(f));
+
+    if (msStrengths.length > 0) {
+      reportData.strengths = reportData.strengths.concat(msStrengths.map(s => ({
+        title: s.title,
+        detail: s.detail,
+        claim_ids: s.claim_ids,
+      })));
+    }
+
+    // Gaps from the dedicated gap summary
+    const msGaps = extractMsGaps(msf);
+    if (msGaps.length > 0) {
+      reportData.gaps = reportData.gaps.concat(msGaps);
+    }
+
+    // Talking points from strategic implications
+    const msTPs = extractMsImplications(msf);
+    if (msTPs.length > 0) {
+      reportData.talkingPoints = reportData.talkingPoints.concat(msTPs);
+    }
+
+    // Pages analysed
+    const msPages = extractMsPagesAnalysed(msf);
+    reportData.pagesAnalysed = reportData.pagesAnalysed.concat(msPages);
+
+    // Methodology
+    if (!reportData.methodology) {
+      reportData.methodology = buildMsMethodology(msf);
+    }
+
+    // Claims
+    reportData.claims = reportData.claims.concat(msf.claims || []);
+
+    // Site structure for treemap (from ms-crawl structure passed through)
+    if (msf.site_structure) {
+      reportData.sitemapData = msf.site_structure;
+    }
+  }
+
   // Deduplicate claims by claim_id (keep claims without an id)
   const seenClaims = new Set();
   reportData.claims = reportData.claims.filter(c => {
@@ -435,7 +588,7 @@ const path = require("path");
  */
 function loadArtefacts(dir, company) {
   const slug = company.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
-  const stageNames = ["brief", "compete", "sitemap", "meeting"];
+  const stageNames = ["brief", "compete", "sitemap", "meeting", "ms_findings"];
   const stages = {};
 
   for (const stage of stageNames) {
@@ -446,6 +599,15 @@ function loadArtefacts(dir, company) {
       `${company}-${stage}-artefact.json`,
       `${stage}-artefact.json`,
     ];
+
+    // For ms_findings, also check ms-findings naming patterns
+    if (stage === "ms_findings") {
+      patterns.push(
+        `${slug}-ms-findings-artefact.json`,
+        `${company}-ms-findings-artefact.json`,
+        `ms-findings-artefact.json`,
+      );
+    }
 
     for (const filename of patterns) {
       const filePath = path.join(dir, filename);
@@ -502,4 +664,9 @@ module.exports = {
   extractMeetingData,
   buildMethodology,
   determineReportType,
+  extractMsFindings,
+  extractMsGaps,
+  extractMsImplications,
+  extractMsPagesAnalysed,
+  buildMsMethodology,
 };

@@ -225,6 +225,76 @@ The crawl is structured as five sequential passes. Each pass has a defined scope
 
 ---
 
+### Step 6 — Site structure synthesis
+
+After all five passes are complete, synthesise a hierarchical site tree from the crawled pages. This is a mechanical step — it organises the page evidence into a navigable tree, not a recommendation.
+
+**Process:**
+1. Group all crawled pages by their `classification.section` tag
+2. Within each section, order pages by URL path depth (shallowest first)
+3. Detect parent-child relationships from URL paths and `navigation_links` fields
+4. Build a hierarchical tree with the homepage as root
+
+**Output:** `{company}-ms-crawl-structure.json`
+
+The structure must be compatible with D3.js treemap rendering (used by `mercury-html.js`).
+
+```json
+{
+  "name": "company.com",
+  "url": "https://www.company.com/",
+  "section": "root",
+  "children": [
+    {
+      "name": "About",
+      "url": "https://www.company.com/about/",
+      "section": "corporate",
+      "page_id": "p-002",
+      "children": [
+        {
+          "name": "Our Strategy",
+          "url": "https://www.company.com/about/strategy/",
+          "section": "corporate",
+          "page_id": "p-003",
+          "children": []
+        },
+        {
+          "name": "Leadership",
+          "url": "https://www.company.com/about/leadership/",
+          "section": "corporate",
+          "page_id": "p-006",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "Investors",
+      "url": "https://www.company.com/investors/",
+      "section": "ir",
+      "page_id": "p-008",
+      "children": [
+        {
+          "name": "Results",
+          "url": "https://www.company.com/investors/results/",
+          "section": "ir",
+          "page_id": "p-009",
+          "children": []
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Rules:**
+- Only include pages that were actually crawled (have a page evidence file)
+- Use the page's `page_title` or H1 for the `name` field, falling back to the last URL path segment
+- Pages not fitting into the tree (orphans) go under a top-level "Other" node
+- Do not infer pages that were not crawled — the tree reflects what was observed
+- URLs from the `firecrawl_map` inventory that were NOT crawled should be listed separately as `uncrawled_urls` at the top level of the structure file
+
+---
+
 ## Page evidence file schema
 
 Save one JSON file per page crawled. Files are saved to `{company}-crawl/pages/`.
@@ -304,6 +374,7 @@ Save `{company}-ms-crawl-manifest.json` on completion.
   },
   "pages_crawled": 38,
   "documents_extracted": 3,
+  "structure_file": "{company}-ms-crawl-structure.json",
   "pages_directory": "{company}-crawl/pages/",
   "gaps": [
     "IR results page (p-017) returned HTTP 403 — content not retrieved",
@@ -321,6 +392,7 @@ Save `{company}-ms-crawl-manifest.json` on completion.
 
 - `{company}-ms-crawl-manifest.json` — crawl summary and metadata
 - `{company}-crawl/pages/p-NNN.json` — one file per page crawled
+- `{company}-ms-crawl-structure.json` — hierarchical site tree (D3 treemap compatible)
 
 ---
 
@@ -329,7 +401,8 @@ Save `{company}-ms-crawl-manifest.json` on completion.
 MS-Findings reads:
 1. `{company}-ms-brief-evidence.json` — company identity, benchmark data, situational context
 2. `{company}-ms-crawl-manifest.json` — crawl summary and page directory
-3. `{company}-crawl/pages/*.json` — page-level evidence pack
+3. `{company}-ms-crawl-structure.json` — site tree for rendering
+4. `{company}-crawl/pages/*.json` — page-level evidence pack
 
 MS-Findings does not run until the crawl manifest is saved and all pass gaps are recorded. Incomplete crawls are valid — gaps are recorded and MS-Findings reasons from what is present.
 
