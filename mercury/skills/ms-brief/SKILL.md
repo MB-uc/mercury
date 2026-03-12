@@ -37,6 +37,7 @@ All reference files are in `mercury/references/` alongside the skill files:
 - `CRAWL_CONFIG.md` — Firecrawl parameters and domain overrides
 - `MATERIAL_EVENTS_CHECKLIST.md` — events that must be flagged in situational awareness
 - `NEGATIVE_VERIFICATION_CONCEPTS.md` — bounded absence language rules
+- `DOCUMENT_CHECKLIST.md` — 130-item inventory of documents to check for (financial, investor, sustainability, marketing, governance, technical)
 
 ---
 
@@ -65,6 +66,7 @@ At the start of every run, silently probe each tool and record the result in the
 | `firecrawl_scrape` | Attempt to scrape a test URL | Deep page content, PDF/document extraction |
 | `firecrawl_map` | Attempt to map a test domain | Full URL discovery (1 credit) |
 | `firecrawl_browser` | Check if browser session responds | JS-rendered and gated content |
+| `firecrawl_agent` | Call `firecrawl_agent` with a trivial prompt | Autonomous news sweep, deep research |
 | `bigquery` | Attempt `SELECT 1 FROM sector_intelligence.iq_benchmarks LIMIT 1` | IQ benchmark scores for 747 companies |
 | `bash` | Attempt a trivial command | File operations |
 
@@ -211,6 +213,84 @@ This step is mandatory regardless of what Step 4a returned. Search indexing lag 
 
 Record each article reviewed as evidence, even if it contains no material events — the record shows the step was completed.
 
+**4c — Firecrawl agent news sweep (conditional):**
+
+If `firecrawl_agent` is available, fire an autonomous news sweep to complement 4a and 4b. This catches coverage from sources that web search may miss — trade press, industry publications, regional business media, and specialist financial outlets.
+
+**When to run:** Always run if `firecrawl_agent` is available. Fire the agent at the **start** of Step 4 (before 4a) so it runs asynchronously while you complete 4a and 4b. Collect results after 4b completes.
+
+**One call only.** Do not retry with a broader prompt if results are thin. Record what was returned and move on.
+
+**Agent prompt template:**
+
+```
+Find recent news, announcements, and material events about {company_name}
+({domain}) published within the last 6 months. Search major business news
+sites, financial press, trade publications, and industry media. For each
+article found, extract the headline, publication date, source name, source
+URL, and a one-sentence summary. Focus on: leadership changes, M&A activity,
+financial results, strategy announcements, ESG developments, regulatory
+actions, and partnerships. Do not include share price commentary, analyst
+ratings, or investment recommendations.
+```
+
+**Agent schema:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "articles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "headline": { "type": "string" },
+          "date": { "type": "string" },
+          "source_name": { "type": "string" },
+          "source_url": { "type": "string" },
+          "summary": { "type": "string" },
+          "event_type": {
+            "type": "string",
+            "enum": ["leadership_change", "ma_activity", "financial_results",
+                     "strategy_announcement", "esg_development", "regulatory_action",
+                     "partnership", "restructuring", "product_launch", "other"]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**News sources the agent should cover:**
+
+The agent autonomously selects sources, but the prompt is designed to surface coverage from sources like:
+- Financial Times, Bloomberg, Reuters, Wall Street Journal
+- Trade and sector press (e.g. The Grocer, Mining Journal, Insurance Times — varies by sector)
+- Regional business media (e.g. City AM, Business Insider, Les Echos)
+- Company-specific coverage on news aggregators
+- PR Newswire, Business Wire, GlobeNewswire
+
+**Recording results:**
+
+Record each article as a separate evidence item with type `agent_news_sweep`. Deduplicate against articles already found in 4a or 4b — if the same event appears from multiple sources, keep the richest version and note the duplicate.
+
+Apply `MATERIAL_EVENTS_CHECKLIST.md` to agent results. Any newly discovered material event must be added to the evidence manifest.
+
+```json
+{
+  "id": "E-0XX",
+  "type": "agent_news_sweep",
+  "tool_used": "firecrawl_agent",
+  "accessed_at": "2026-03-12T10:09:00Z",
+  "articles_returned": 12,
+  "articles_after_dedup": 7,
+  "new_material_events": 1,
+  "content_summary": "7 unique articles after dedup. New material event: restructuring announced Feb 2026."
+}
+```
+
 ### Step 5 — Site structure discovery
 
 **If `firecrawl_map` is available:**
@@ -261,7 +341,14 @@ Do not fetch regional subdomains, product detail pages, or career vacancy listin
 
 ### Step 7 — Document inventory
 
-Based on URLs discovered in Step 5 and pages fetched in Step 6, identify key documents for potential extraction.
+Use `DOCUMENT_CHECKLIST.md` as the master list. The checklist contains 130 items across 13 categories: financial reporting, investor communications, regulatory filings (UK and EU), sustainability/ESG, analyst research, marketing collateral, thought leadership, case studies, corporate communications, recruitment, partner/ecosystem, industry context, and digital/technical.
+
+**How to use the checklist:**
+- Filter by skill assignment: items tagged **WR** (website-research) and **BOTH** are relevant to ms-brief's site inventory. Items tagged **CR** (company-research) only are checked via web search, not site crawl.
+- Filter by automation tier: **T1** items are fully automatable now. **T2** items are extractable when Firecrawl is available (PDFs, docs, spreadsheets). **T3** items require paid subscriptions — record as gaps.
+- Cross-reference against URLs discovered in Step 5 and pages fetched in Step 6. For each checklist item, record: present (with URL), absent, partial, gated, or external.
+
+Based on URLs discovered in Step 5, pages fetched in Step 6, and the checklist cross-reference, identify key documents for potential extraction.
 
 For each document identified, do a shallow probe first — scrape just the first 5 pages to confirm:
 ```json
@@ -384,6 +471,16 @@ Save `{company}-ms-brief-evidence.json` using the schema below. This is the hand
       "material_events_checklist_applied": true
     },
     {
+      "id": "E-003b",
+      "type": "agent_news_sweep",
+      "tool_used": "firecrawl_agent",
+      "accessed_at": "2026-03-12T10:09:00Z",
+      "articles_returned": 15,
+      "articles_after_dedup": 8,
+      "new_material_events": 0,
+      "content_summary": "8 unique articles after dedup with 4a/4b. Trade press coverage of FY results, sector commentary. No new material events beyond those already captured."
+    },
+    {
       "id": "E-004",
       "type": "site_map",
       "url": "https://www.company.com",
@@ -413,6 +510,16 @@ Save `{company}-ms-brief-evidence.json` using the schema below. This is the hand
       "content_summary": "Chair and CEO statements, strategy section, FY25 KPIs. Strategy priorities: operational excellence, market expansion, digital transformation."
     }
   ],
+  "document_checklist_summary": {
+    "total_items": 130,
+    "wr_and_both_items_checked": 56,
+    "present": 34,
+    "absent": 14,
+    "partial": 3,
+    "gated": 2,
+    "external": 3,
+    "t3_gaps": ["analyst consensus estimates", "broker reports", "earnings transcripts"]
+  },
   "documents_pending_extraction": [
     {
       "url": "https://www.company.com/investors/cmd-2025.pdf",
