@@ -33,6 +33,7 @@ const adapter = require(path.join(SCRIPTS_DIR, "mercury-adapter.js"));
 const MH = require(path.join(SCRIPTS_DIR, "mercury-html.js"));
 const M = require(path.join(SCRIPTS_DIR, "mercury-components.js"));
 const MP = require(path.join(SCRIPTS_DIR, "mercury-pptx.js"));
+const MX = require(path.join(SCRIPTS_DIR, "mercury-xlsx.js"));
 
 // ============================================================
 // MANIFEST — tracks all rendered outputs for the Documents tab
@@ -90,14 +91,19 @@ const STAGE_LABELS = {
   compete: "Competitive Landscape",
   sitemap: "Sitemap Recommendation",
   meeting: "Meeting Pack",
+  ms_brief: "Strategy Brief",
+  ms_crawl: "Site Crawl",
+  ms_findings: "Strategy Findings",
 };
 
 const STAGE_ORDER = ["brief", "compete", "sitemap", "meeting"];
+const MS_STAGE_ORDER = ["ms_brief", "ms_crawl", "ms_findings"];
 
 function nextStage(currentStage) {
-  const idx = STAGE_ORDER.indexOf(currentStage);
-  if (idx < 0 || idx >= STAGE_ORDER.length - 1) return null;
-  return STAGE_ORDER[idx + 1];
+  const order = MS_STAGE_ORDER.includes(currentStage) ? MS_STAGE_ORDER : STAGE_ORDER;
+  const idx = order.indexOf(currentStage);
+  if (idx < 0 || idx >= order.length - 1) return null;
+  return order[idx + 1];
 }
 
 // ============================================================
@@ -390,6 +396,9 @@ async function renderStage(config) {
       } else if (fmt === "pptx") {
         await renderPPTX(reportData, outputPath);
         result.files.pptx = outputPath;
+      } else if (fmt === "xlsx") {
+        await MX.build(reportData, outputPath);
+        result.files.xlsx = outputPath;
       }
 
       // Record in manifest
@@ -447,7 +456,7 @@ function buildDocumentsTabData(manifest) {
 
   return {
     stages_completed: manifest.stages_completed,
-    groups: STAGE_ORDER
+    groups: [...STAGE_ORDER, ...MS_STAGE_ORDER]
       .filter(s => stageGroups[s])
       .map(s => stageGroups[s]),
   };
@@ -482,11 +491,14 @@ function stageCompleteMessage(stage, reportData, manifest) {
   msg += "- **HTML** — interactive presentation (opens in browser)\n";
   msg += "- **Word** — branded document (.docx)\n";
   msg += "- **Slides** — branded presentation (.pptx)\n";
+  msg += "- **Excel** — structured workbook with site structure sheet (.xlsx)\n";
   msg += "\n";
 
   if (next) {
     const nextLabel = STAGE_LABELS[next];
-    msg += `**Or continue to:** \`/mercury:${next}\` — ${nextLabel}\n`;
+    const commandPrefix = MS_STAGE_ORDER.includes(next) ? "/ms-" : "/mercury:";
+    const commandName = MS_STAGE_ORDER.includes(next) ? next.replace("ms_", "") : next;
+    msg += `**Or continue to:** \`${commandPrefix}${commandName}\` — ${nextLabel}\n`;
   } else {
     msg += "**All stages complete.** You can download the full integrated report in any format.\n";
   }
@@ -520,5 +532,6 @@ module.exports = {
   // Stage helpers
   STAGE_LABELS,
   STAGE_ORDER,
+  MS_STAGE_ORDER,
   nextStage,
 };

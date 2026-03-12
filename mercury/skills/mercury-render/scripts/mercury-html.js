@@ -259,94 +259,80 @@ function renderPeerComparison(data) {
   </section>`;
 }
 
-function renderTreemap(data) {
+/**
+ * Render a directory-tree node recursively as HTML.
+ * Returns an array of <li> strings.
+ *
+ * sitemapData node shape:
+ *   { name, label?, url?, description?, children?: [...] }
+ */
+function renderTreeNode(node, depth) {
+  const label = escapeHtml(node.label || node.name || "");
+  const url   = node.url ? escapeHtml(node.url) : null;
+  const desc  = node.description ? escapeHtml(node.description) : null;
+
+  const nameEl = url
+    ? `<a class="tree-link" href="${url}" target="_blank" rel="noopener">${label}</a>`
+    : `<span class="tree-node-name">${label}</span>`;
+
+  const descEl = desc ? ` <span class="tree-node-desc">— ${desc}</span>` : "";
+
+  const hasChildren = Array.isArray(node.children) && node.children.length > 0;
+  const icon = hasChildren ? "📁" : "📄";
+
+  let html = `<li class="tree-item depth-${depth}">`;
+  html += `<span class="tree-icon">${icon}</span>${nameEl}${descEl}`;
+
+  if (hasChildren) {
+    html += `<ul class="tree-children">`;
+    for (const child of node.children) {
+      html += renderTreeNode(child, depth + 1);
+    }
+    html += `</ul>`;
+  }
+
+  html += `</li>`;
+  return html;
+}
+
+function renderSiteTree(data) {
   if (!data.sitemapData) return "";
 
-  // Escape </script> sequences to prevent XSS breakout
-  const treeJson = JSON.stringify(data.sitemapData).replace(/<\//g, "<\\/");
+  const tree = data.sitemapData;
+  const rootLabel = escapeHtml(tree.label || tree.name || "Site root");
+  const hasChildren = Array.isArray(tree.children) && tree.children.length > 0;
+
+  let treeHtml = `<ul class="site-tree">`;
+  treeHtml += `<li class="tree-item depth-0 tree-root">`;
+  treeHtml += `<span class="tree-icon">🌐</span><span class="tree-node-name tree-root-name">${rootLabel}</span>`;
+
+  if (hasChildren) {
+    treeHtml += `<ul class="tree-children">`;
+    for (const child of tree.children) {
+      treeHtml += renderTreeNode(child, 1);
+    }
+    treeHtml += `</ul>`;
+  }
+
+  treeHtml += `</li></ul>`;
+
+  // Count totals for the summary line
+  function countNodes(node) {
+    let n = 1;
+    if (Array.isArray(node.children)) {
+      for (const c of node.children) n += countNodes(c);
+    }
+    return n;
+  }
+  const totalPages = countNodes(tree) - 1; // exclude root
 
   return `
   <section id="sitemap" class="content-section fade-in">
-    <h2>Recommended site architecture</h2>
-    <div id="treemap-container"></div>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const treeData = ${treeJson};
-      const container = document.getElementById('treemap-container');
-      const width = container.clientWidth;
-      const height = 500;
-
-      const root = d3.hierarchy(treeData)
-        .sum(d => d.value || 1)
-        .sort((a, b) => b.value - a.value);
-
-      d3.treemap()
-        .size([width, height])
-        .paddingOuter(3)
-        .paddingTop(22)
-        .paddingInner(2)
-        .round(true)(root);
-
-      const svg = d3.select('#treemap-container')
-        .append('svg')
-        .attr('viewBox', '0 0 ' + width + ' ' + height)
-        .attr('width', '100%');
-
-      const sectionColors = {
-        "About Us":        "${COLORS.ROSE}",
-        "What We Do":      "${COLORS.AQUAMARINE}",
-        "Investors":       "${COLORS.BLUE}",
-        "Sustainability":  "${COLORS.LEMON_LIME}",
-        "Media":           "${COLORS.ORANGE}",
-        "Careers":         "${COLORS.GREEN}",
-      };
-
-      function getColor(d) {
-        let node = d;
-        while (node.depth > 1 && node.parent) node = node.parent;
-        const name = node.data.name || '';
-        return sectionColors[name] || '${COLORS.MEDIUM}';
-      }
-
-      const leaf = svg.selectAll('g')
-        .data(root.leaves())
-        .join('g')
-        .attr('transform', d => 'translate(' + d.x0 + ',' + d.y0 + ')');
-
-      leaf.append('rect')
-        .attr('width', d => Math.max(0, d.x1 - d.x0))
-        .attr('height', d => Math.max(0, d.y1 - d.y0))
-        .attr('fill', d => getColor(d))
-        .attr('opacity', 0.85)
-        .attr('rx', 2);
-
-      leaf.append('text')
-        .attr('x', 4)
-        .attr('y', 14)
-        .text(d => {
-          const w = d.x1 - d.x0;
-          const name = d.data.name || '';
-          return w > 60 ? name : (w > 30 ? name.substring(0, 3) : '');
-        })
-        .attr('font-size', '10px')
-        .attr('font-family', ${JSON.stringify(FONTS.HEADING)})
-        .attr('fill', '${COLORS.LICORICE}')
-        .attr('opacity', 0.9);
-
-      // Section labels on parent groups
-      const parents = svg.selectAll('.parent-label')
-        .data(root.descendants().filter(d => d.depth === 1))
-        .join('text')
-        .attr('class', 'parent-label')
-        .attr('x', d => d.x0 + 4)
-        .attr('y', d => d.y0 + 16)
-        .text(d => d.data.name)
-        .attr('font-size', '12px')
-        .attr('font-weight', 'bold')
-        .attr('font-family', ${JSON.stringify(FONTS.HEADING)})
-        .attr('fill', '${COLORS.FLORAL_WHITE}');
-    });
-    </script>
+    <h2>Site structure</h2>
+    <p class="section-meta">${totalPages} page${totalPages !== 1 ? "s" : ""} across ${(tree.children || []).length} top-level section${(tree.children || []).length !== 1 ? "s" : ""}</p>
+    <div class="site-tree-container">
+      ${treeHtml}
+    </div>
   </section>`;
 }
 
@@ -497,14 +483,10 @@ function buildPresentation(data) {
   const gaps = renderGaps(data);
   const benchmarks = renderBenchmarks(data);
   const talkingPoints = renderTalkingPoints(data);
-  const treemap = renderTreemap(data);
+  const siteTree = renderSiteTree(data);
   const pagesAnalysed = renderPagesAnalysed(data);
   const methodology = renderMethodology(data);
   const documents = renderDocuments(data);
-
-  const d3Script = data.sitemapData
-    ? '<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>'
-    : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -512,7 +494,6 @@ function buildPresentation(data) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(data.title)} — ${escapeHtml(data.subtitle)} | Mercury</title>
-${d3Script}
 <style>
 ${fontFaces}
 
@@ -647,9 +628,20 @@ main { margin-left: 0; margin-top: 52px; }
 .comparison-table .dimension-cell { font-weight: 700; }
 .comparison-table .edge-cell { font-weight: 700; color: ${COLORS.LEMON_LIME}; }
 
-/* ============ TREEMAP ============ */
-#treemap-container { width: 100%; margin-top: 1.5rem; border-radius: 6px; overflow: hidden; background: rgba(0,0,0,0.2); }
-#treemap-container svg { display: block; }
+/* ============ SITE TREE ============ */
+.site-tree-container { margin-top: 1.5rem; }
+.site-tree, .tree-children { list-style: none; margin: 0; padding: 0; }
+.tree-children { margin-left: 1.5rem; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 1rem; }
+.tree-item { padding: 0.25rem 0; font-size: 0.875rem; line-height: 1.5; }
+.tree-item.tree-root { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.tree-icon { margin-right: 0.4rem; font-size: 0.85em; opacity: 0.8; }
+.tree-node-name { color: ${COLORS.FLORAL_WHITE}; font-weight: 500; }
+.tree-root-name { color: ${COLORS.ROSE}; }
+.tree-link { color: ${COLORS.AQUAMARINE}; text-decoration: none; }
+.tree-link:hover { text-decoration: underline; }
+.tree-node-desc { color: ${COLORS.MEDIUM}; font-size: 0.82em; font-style: italic; }
+.depth-1 > .tree-node-name { color: ${COLORS.LEMON_LIME}; font-weight: 600; }
+.depth-1 > .tree-link { color: ${COLORS.LEMON_LIME}; }
 
 /* ============ METHODOLOGY ============ */
 .methodology-text { color: ${COLORS.MEDIUM}; }
@@ -721,7 +713,7 @@ ${peerComparison}
 ${gaps}
 ${benchmarks}
 ${talkingPoints}
-${treemap}
+${siteTree}
 ${pagesAnalysed}
 ${methodology}
 ${documents}
@@ -775,7 +767,7 @@ module.exports = {
   renderBenchmarks,
   renderTalkingPoints,
   renderPeerComparison,
-  renderTreemap,
+  renderSiteTree,
   renderPagesAnalysed,
   renderMethodology,
   renderDocuments,
