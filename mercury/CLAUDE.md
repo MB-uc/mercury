@@ -1,4 +1,4 @@
-# Mercury v5 — IDX consultant engagement preparation
+# Mercury v6 — IDX consultant engagement preparation
 
 Mercury prepares IDX consultants for client engagements using proprietary IDX data. It runs a four-stage pipeline — briefing, competitive landscape, sitemap recommendation, and meeting pack — each producing an evidence-backed report with classified findings and a citation register.
 
