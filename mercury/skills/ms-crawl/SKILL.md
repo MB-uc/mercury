@@ -1,284 +1,324 @@
 ---
 name: ms-crawl
-description: >
-  Five-pass site discovery for Mercury Strategy. Takes the ms-brief evidence manifest and
-  runs a structured crawl of the company's corporate website, building a page-level evidence
-  pack organised by section and content type. This is a pure collection skill — it gathers
-  and classifies page evidence. It does not synthesise findings or produce recommendations.
-  Invoke via /ms-crawl <company name>.
+description: "Mercury Strategy collection stage 2 — four-source site discovery, section classification, content scraping, negative verification, and site structure output. Use when the consultant runs /ms-crawl. This stage collects only. It produces no findings, no evaluations, and no recommendations."
 ---
 
-# MS-Crawl — five-pass site discovery
+# ms-crawl — Mercury Strategy site discovery stage
 
-## Role in the Mercury Strategy pipeline
-
-MS-Crawl is the second stage of the Mercury Strategy pipeline. It runs after `ms-brief` and before `ms-findings`.
-
-**Two-agent separation is the foundational design principle.** MS-Crawl is a collection agent. MS-Findings is a reasoning agent. These two never run simultaneously. MS-Crawl finishes and saves its output before MS-Findings begins. This boundary is not a convention — it is a hard constraint. Mixing collection and reasoning degrades both.
-
-**What this skill does:**
-- Takes the `ms-brief` evidence manifest as its primary input
-- Runs five structured passes over the corporate website, each with a specific focus
-- Builds a page-level evidence pack: one JSON evidence file per page crawled
-- Classifies each page against the section taxonomy in `CLASSIFICATION_RULES.md`
-- Applies Firecrawl domain overrides from `CRAWL_CONFIG.md`
-- Saves a complete crawl manifest on completion
-
-**What this skill does not do:**
-- It does not evaluate pages against archetypes or playbook criteria
-- It does not generate findings, claims, or recommendations
-- It does not synthesise across pages
-- It does not score content quality
+Collection stage 2 of 3. Executes the four-source crawl methodology defined in `references/CRAWL_CONFIG.md`, classifies all discovered URLs using `references/CLASSIFICATION_RULES.md`, scrapes a representative page sample, runs negative verification for all concepts in `references/NEGATIVE_VERIFICATION_CONCEPTS.md`, and outputs a structured evidence manifest and a D3-compatible site structure file.
 
 ---
 
-## Reference files
+## Before you begin
 
-- `CRAWL_CONFIG.md` — Firecrawl parameters, domain overrides, and scrape configuration rules
-- `CLASSIFICATION_RULES.md` — taxonomy for classifying pages and documents by section and type
-- `NEGATIVE_VERIFICATION_CONCEPTS.md` — how to record absence without over-claiming
-
----
-
-## Prerequisites
-
-- `{company}-ms-brief-evidence.json` must exist and contain a `site_map` evidence item
-- If the brief evidence manifest is missing, surface a clear message and halt. Do not attempt to collect site structure independently.
+1. Confirm `{company}-ms-brief-evidence.json` exists. If it does not, surface a clear message and prompt the consultant to run `/ms-brief` first. Do not silently trigger it.
+2. Load the brief manifest and note: primary domain, subdomains found, `firecrawl_map` status from Step 4 of ms-brief, and any CRAWL_CONFIG entries for this domain.
+3. Read `references/CRAWL_CONFIG.md` in full before making any scrape calls.
 
 ---
 
-## Core principles
+## Core principle
 
-**1. Collection only.** No findings, no synthesis, no evaluation. Everything is raw evidence.
-
-**2. Provenance on every page.** Every page evidence file records: URL, tool used, timestamp, raw content (or extraction summary), word count, and classification tags.
-
-**3. Cost discipline.** `firecrawl_map` has already been run in `ms-brief`. Do not re-run it. Use the URL inventory from the brief evidence manifest. Escalate from `web_fetch` to `firecrawl_scrape` only when needed.
-
-**4. ⚠️ PROHIBITED: `firecrawl_crawl`.** Never use it. See the escalation protocol below.
-
-**5. Scope discipline.** Only crawl the primary corporate domain identified in the brief manifest. No regional subdomains unless the consultant explicitly adds them to scope.
-
-**6. Bounded absence.** When a page or section is not found, record what was checked and where. See `NEGATIVE_VERIFICATION_CONCEPTS.md`.
+A partial crawl produces unreliable absence claims. Every URL classification must be supported by at least one of the four discovery sources below. No absence claim may be asserted unless it has passed the three-step negative verification procedure in `references/NEGATIVE_VERIFICATION_CONCEPTS.md`.
 
 ---
 
-## Capability detection
+## Source 1 — sitemap.xml
 
-At the start of every run, silently probe each tool and record in the crawl manifest.
+**Goal:** Establish the declared URL inventory.
 
-| Capability | Required | Impact if missing |
-|------------|----------|-------------------|
-| `web_fetch` | Yes (Level 0) | Escalate all fetches to firecrawl_scrape |
-| `firecrawl_scrape` | Recommended | Cannot extract PDFs or JS-rendered pages |
-| `firecrawl_browser` | Optional | Gated and JS-interactive content inaccessible |
-| `bash` | Recommended | Cannot save page evidence files |
+1. Fetch `{domain}/sitemap.xml`
+2. If it returns a sitemap index, fetch each child sitemap
+3. Also try `{domain}/sitemap_index.xml` if the first fetch fails or returns 404
+4. Extract all `<loc>` URLs
+5. Count total and note any dedicated sitemaps (e.g. `news-sitemap.xml`)
 
-### Collection escalation protocol
+**Record in `crawl_summary.sources.sitemap`:**
+- `present` — sitemap exists and is comprehensive (covers 70%+ of URLs found by firecrawl_map)
+- `present_incomplete` — sitemap exists but sparse relative to firecrawl_map results
+- `not_found` — no sitemap returned
+- `blocked` — fetch timed out or returned non-200
 
-```
-Level 0: web_fetch          — free, always try first for HTML pages
-Level 1: firecrawl_scrape   — 1 credit, when web_fetch fails or returns JS shell
-Level 2: firecrawl_browser  — 1+ credits, when scrape fails (gated/interactive content)
-```
-
-Before every `firecrawl_scrape` call, check `CRAWL_CONFIG.md` for domain-specific overrides. If the domain is listed, use its `includeTags` / `excludeTags` configuration instead of `onlyMainContent: true`.
-
-### Credit budget guidance
-
-A typical MS-Crawl run should use:
-- 0 credits for `firecrawl_map` (already done in ms-brief)
-- 20–40 credits for `firecrawl_scrape` calls across the five passes
-- Up to 10 additional credits for `firecrawl_browser` on gated pages
-
-If approaching 60+ scrape calls in a single run, pause and assess — you are likely fetching pages not needed for the evidence pack.
+If sitemap fails, proceed to Source 2. Do not block.
 
 ---
 
-## The five passes
+## Source 2 — HTML navigation
 
-The crawl is structured as five sequential passes. Each pass has a defined scope and a target page set. Complete each pass fully before starting the next.
+**Goal:** Establish the intended site structure as presented to visitors.
 
-### Pass 1 — Core corporate pages
+1. Fetch the homepage using `firecrawl_scrape` (check CRAWL_CONFIG first)
+2. Extract all links from: `<nav>`, `<header>`, and elements with nav-related class or role attributes
+3. Also extract footer links (often surfaces governance, legal, policy pages not in main nav)
+4. For each link record: `{ url, label, nav_position }` where `nav_position` is `primary_nav`, `secondary_nav`, `footer`, or `homepage_body`
 
-**Purpose:** Establish the company's basic corporate identity, structure, and messaging as expressed on the website.
+**Note:**
+- Navigation depth (single-level vs dropdown)
+- Whether audience-specific entry points are present (Investors, Careers etc.)
+- Any external links in nav (careers on a separate domain is evidence for A09/A12 archetypes)
 
-**Pages to fetch:**
-- Homepage (`/`)
-- About / company overview (typically `/about`, `/about-us`, `/company`, `/who-we-are`)
-- Strategy (typically `/strategy`, `/our-strategy`, `/about/strategy`)
-- Business model (if a dedicated page exists)
-- History / heritage (if present and relevant)
-- Leadership / board (typically `/leadership`, `/board`, `/governance/board`)
-- At a glance / key facts (if present)
-
-**What to record per page:**
-- Full URL
-- Page title (`<title>` tag)
-- H1 heading
-- Primary navigation links visible on the page
-- Content summary (key messages, structure, notable elements)
-- Word count
-- Any documents linked from this page (PDF, DOCX URLs)
-- Classification tags from `CLASSIFICATION_RULES.md`
-
-**Stop condition:** If a page is unavailable, note it as a gap. Do not substitute with a different page.
+If homepage scrape fails, proceed with Sources 1, 3, and 4 and note the gap.
 
 ---
 
-### Pass 2 — Investor relations
+## Source 3 — firecrawl_map
 
-**Purpose:** Map the full IR section — landing page, results, reports, documents, financial calendar, shareholder information.
+**Goal:** Discover all linked pages — the full reachable URL graph.
 
-**Pages to fetch (work from URL inventory in brief manifest):**
-- IR landing page
-- Latest results (full-year and/or half-year)
-- Annual report page
-- Capital markets day / investor day materials (if present)
-- Financial calendar
-- Share price page
-- Shareholder information / structure
-- AGM information
-- Debt investor / fixed income section (if present)
-- Contact for investors
+If ms-brief Step 4 already ran `firecrawl_map` and returned a complete result, use that output — do not re-run unnecessarily. If it returned `blocked` or `partial`, attempt again.
 
-**Documents to extract (via `firecrawl_scrape`):**
-- Results presentation PDF (latest)
-- Annual report PDF (partial — first 40 pages unless consultant approved full extraction in ms-brief)
-- CMD / investor day presentation PDF (if present and approved in ms-brief)
-- Any other documents linked from IR pages
+1. Run `firecrawl_map` on the root domain
+2. Collect all returned URLs
+3. Note total count
+4. Identify subdomains present
+5. Fetch `{domain}/robots.txt` and note any significant `Disallow` rules
 
-**What to record per page:**
-- As Pass 1, plus:
-- Documents linked from this page (URL, document type, file size if visible)
-- Whether key IR components are present or absent (record presence/absence, not evaluation)
+**Record in `crawl_summary.sources.firecrawl_map`:**
+- `complete` — returned 10+ URLs with no error indicators
+- `partial` — returned some URLs but appears incomplete
+- `blocked` — returned fewer than 10 URLs or timed out
+
+If blocked, record and rely on Sources 1, 2, and 4.
 
 ---
 
-### Pass 3 — Sustainability and ESG
+## Source 4 — Pagination loops
 
-**Purpose:** Map the sustainability section — content depth, reporting frameworks, data availability, documents.
+**Goal:** Establish the true depth of archive sections.
 
-**Pages to fetch:**
-- Sustainability / ESG landing page
-- Environmental content
-- Social responsibility content
-- Governance content
-- Reporting / data / performance section
-- Any standalone sustainability reports linked from the section
+From the URL inventory from Sources 1–3, identify paginated sections:
+- News / newsroom / press releases
+- Results archive
+- Reports and publications
 
-**Documents to extract (when approved):**
-- Sustainability report PDF (partial — key sections)
-- TCFD report (if standalone)
+For each paginated section, follow pagination links up to a maximum of 5 pages. Record:
+- Section name
+- Total pages estimated
+- Date range of visible content (first and last item dates)
 
-**What to record per page:**
-- As Pass 1, plus:
-- Reporting framework references (GRI, TCFD, SASB, SDGs — present or absent)
-- Targets mentioned (net zero, emissions reduction, etc.)
-- Performance data visible (quantified metrics — record values, do not evaluate)
+If pagination links are not found or are JavaScript-rendered, record `not_assessed` — do not assume the section is shallow.
 
 ---
 
-### Pass 4 — Careers and employer brand
+## Deduplication and crawl_summary
 
-**Purpose:** Map the careers section — EVP, content depth, job search, early careers.
-
-**Pages to fetch:**
-- Careers landing page
-- Why join / culture / values
-- Benefits / rewards
-- Early careers / graduates (if present)
-- Employee stories (if present)
-- Diversity and inclusion (if present)
-- Locations (if present)
-- Jobs / vacancies page (fetch but do not extract individual listings)
-
-**What to record per page:**
-- As Pass 1, plus:
-- Job application system type (internal, external ATS, external platform)
-- Content types present (video, employee stories, testimonials — record presence, not quality)
-
----
-
-### Pass 5 — News, media, and governance
-
-**Purpose:** Map the newsroom and governance sections — content currency, media accessibility, governance completeness.
-
-**Pages to fetch (news/media):**
-- News / media / newsroom landing page
-- Most recent press releases (latest 3–5)
-- Media contacts page
-- Image library or press pack (if present)
-
-**Pages to fetch (governance):**
-- Corporate governance landing
-- Board composition / committee structure
-- Committee terms of reference (if linked)
-- Audit, remuneration, nomination committee pages
-- Modern slavery statement (if present)
-- Privacy policy / GDPR page
-
-**What to record per page:**
-- As Pass 1
-- For news pages: article date, headline, content type (press release, story, RNS)
-- For governance pages: document availability (policy documents, statements, reports)
-
----
-
-### Step 6 — Site structure synthesis
-
-After all five passes are complete, synthesise a hierarchical site tree from the crawled pages. This is a mechanical step — it organises the page evidence into a navigable tree, not a recommendation.
-
-**Process:**
-1. Group all crawled pages by their `classification.section` tag
-2. Within each section, order pages by URL path depth (shallowest first)
-3. Detect parent-child relationships from URL paths and `navigation_links` fields
-4. Build a hierarchical tree with the homepage as root
-
-**Output:** `{company}-ms-crawl-structure.json`
-
-The structure must be compatible with D3.js treemap rendering (used by `mercury-html.js`).
+After all four sources, deduplicate the URL inventory (strip tracking parameters, remove pagination variants per `references/CRAWL_CONFIG.md` URL exclusion rules) and compile:
 
 ```json
 {
-  "name": "company.com",
-  "url": "https://www.company.com/",
-  "section": "root",
+  "domain": "",
+  "crawl_date": "",
+  "sources": {
+    "sitemap": "present | present_incomplete | not_found | blocked",
+    "navigation": "extracted | failed",
+    "firecrawl_map": "complete | partial | blocked",
+    "pagination": "assessed | not_assessed"
+  },
+  "pages_discovered": 0,
+  "pages_crawled": 0,
+  "excluded": 0,
+  "error_pages": 0,
+  "subdomains_found": [],
+  "robots_disallow": [],
+  "coverage_confidence": "high | medium | low"
+}
+```
+
+**Coverage confidence:**
+- `high` — all four sources succeeded, sitemap is comprehensive
+- `medium` — 2–3 sources succeeded, or sitemap is incomplete
+- `low` — only 1 source succeeded, or firecrawl_map was blocked
+
+Low coverage confidence downgrades all absence claims to `not_assessed` in the evidence manifest.
+
+---
+
+## URL classification
+
+Classify every discovered URL using `references/CLASSIFICATION_RULES.md` in strict priority order:
+
+1. **Priority 1** — Exact path match (high confidence)
+2. **Priority 2** — First path segment match after locale stripping (high confidence)
+3. **Priority 3** — Deep segment match (medium confidence)
+4. **Priority 4** — File extension (high confidence for document type)
+5. **Priority 5** — Unclassified
+
+For ambiguous URLs (see `references/CLASSIFICATION_RULES.md` Ambiguous URL handling), record as `ambiguous` and resolve during content scraping using page title and content signals.
+
+Apply document sub-classification to all URLs classified as `document` type.
+
+Apply careers platform detection (Workday, Taleo, Greenhouse etc.) if a careers link routes to an external domain.
+
+---
+
+## Content scraping — priority tiers
+
+After classification, scrape a representative sample. Use `firecrawl_scrape` with `onlyMainContent: true` unless CRAWL_CONFIG specifies an override.
+
+If a scrape returns more than 60,000 characters, flag as nav bloat. Check CRAWL_CONFIG for a selector override. Do not pass bloated content to the evidence manifest.
+
+### Tier 1 — Always scrape (maximum 10 pages)
+
+Homepage, IR landing, strategy page, sustainability landing, about/at-a-glance, careers landing, newsroom landing, governance overview, leadership/board page.
+
+### Tier 2 — Standard audit (maximum 8 additional pages)
+
+Investment case, results page, annual report page, sustainability strategy page, one sustainability topic page, most recent news article.
+
+### Tier 3 — Deep audit only (maximum 12 additional pages)
+
+Committee pages, sustainability reporting centre, ESG data page, graduate programme page, employee stories page, CMD/investor day page, 3–5 additional news articles.
+
+**Default depth is Tier 1 + Tier 2** unless the consultant has requested a deep audit.
+
+For each scraped page, apply presence quality classification from `references/CLASSIFICATION_RULES.md`:
+
+| Quality | Criteria |
+|---------|----------|
+| `present` | 400+ words, structured headings, content addresses the concept |
+| `present_thin` | Fewer than 200 words or generic boilerplate |
+| `present_stale` | Not updated in 18+ months (check dates, copyright year, referenced events) |
+| `present_documents_only` | Only PDF download links, no on-page narrative |
+| `present_external` | Served via external platform |
+| `present_generic` | Not configured for the expected audience or purpose |
+
+Record staleness signals checked: copyright year, most recent results reference, CEO name currency, financial target currency.
+
+---
+
+## Document checklist
+
+Read `references/DOCUMENT_CHECKLIST.md` before running this step.
+
+The checklist covers 130 document types across financial reporting, investor communications, sustainability, corporate communications, governance, and more. Each item is tagged with a skill assignment — check only items tagged **WR** (website-research) or **BOTH**.
+
+**Priority pass — always run (regardless of audit depth):**
+
+Check for the following WR/BOTH items from the document inventory found during scraping. These are the highest-value documents for the findings stage:
+
+| # | Document | Where to look |
+|---|----------|---------------|
+| 1 | Annual report and accounts | IR section, PDF links |
+| 3 | Prelims presentation slides | IR section, results page |
+| 6 | Half-year / interim results | IR section |
+| 7 | Half-year presentation slides | IR section |
+| 11 | Capital markets day presentation | IR section, events |
+| 13 | Investor day materials | IR section |
+| 14 | Strategy update presentation | Strategy / IR section |
+| 17 | Investor factsheet / factbook | IR section |
+| 19 | AGM presentation | Governance / IR section |
+| 32 | Sustainability report / ESG report | Sustainability section, PDF links |
+| 33 | TCFD report | Sustainability section |
+| 35 | Net zero transition plan | Sustainability section |
+| 36 | Modern slavery statement | Footer, governance, sustainability |
+| 37 | Gender pay gap report | Careers, governance section |
+
+For each item, record:
+```json
+{
+  "item_id": 1,
+  "document": "Annual report and accounts",
+  "status": "present | present_partial | absent | not_assessed",
+  "url": "",
+  "notes": ""
+}
+```
+
+**Extended pass — run for Tier 2 and Tier 3 audits:**
+
+Check all remaining WR and BOTH items from DOCUMENT_CHECKLIST.md (items tagged CR are not assessed at this stage — those are company-research scope). Record all checked items in the document_checklist section of the manifest.
+
+Do not extract document contents in this stage — record presence and URL only. Document extraction is ms-brief's responsibility with consultant approval.
+
+---
+
+## Negative verification
+
+After scraping, run the negative verification procedure for every concept in `references/NEGATIVE_VERIFICATION_CONCEPTS.md`.
+
+For each concept, follow the three-step procedure in that file:
+
+1. **Step 1** — Path matching against the deduplicated URL inventory
+2. **Step 2** — Direct URL probe (top three candidate paths from the concept's path variants list)
+3. **Step 3** — Site search fallback using the concept's listed search query
+
+Only after all three steps fail may the concept be recorded as `absent`.
+
+Record each concept result in the evidence manifest:
+```json
+{
+  "concept": "",
+  "status": "present | present_thin | present_stale | present_documents_only | present_external | present_generic | absent | not_assessed",
+  "verified_by": "path_match | direct_probe | site_search | not_run",
+  "url": "",
+  "checked_paths": [],
+  "search_query": "",
+  "notes": ""
+}
+```
+
+If coverage confidence is `low`, record all concepts as `not_assessed` rather than `absent` — insufficient coverage means absence cannot be confirmed.
+
+---
+
+## Site structure output
+
+After completing the crawl, build two outputs from the classified URL inventory and scraped content.
+
+### Evidence manifest section — section_inventory
+
+Record the classified section inventory in the evidence manifest. For each section key, record:
+```json
+{
+  "section_key": "",
+  "urls_discovered": 0,
+  "pages_scraped": 0,
+  "presence_quality": "",
+  "scraped_pages": [
+    {
+      "url": "",
+      "page_title": "",
+      "section_key": "",
+      "playbook_page_type": "",
+      "classification_rule": "",
+      "classification_confidence": "high | medium",
+      "presence_quality": "",
+      "word_count": 0,
+      "content_summary": "",
+      "key_observations": [],
+      "documents_linked": [],
+      "staleness_signals": []
+    }
+  ]
+}
+```
+
+### Site structure file — D3-compatible tree
+
+Build a nested tree representing the site's confirmed structure. Save as `{company}-ms-crawl-structure.json`.
+
+This file is consumed by the HTML and Excel renderers. Shape:
+
+```json
+{
+  "name": "root",
+  "label": "{domain}",
   "children": [
     {
-      "name": "About",
-      "url": "https://www.company.com/about/",
-      "section": "corporate",
-      "page_id": "p-002",
+      "name": "{section_key}",
+      "label": "{display name — e.g. 'Investors'}",
+      "url": "{section landing page URL}",
+      "description": "{one-sentence content summary}",
+      "presence_quality": "present | present_thin | present_stale | ...",
+      "word_count": 0,
       "children": [
         {
-          "name": "Our Strategy",
-          "url": "https://www.company.com/about/strategy/",
-          "section": "corporate",
-          "page_id": "p-003",
-          "children": []
-        },
-        {
-          "name": "Leadership",
-          "url": "https://www.company.com/about/leadership/",
-          "section": "corporate",
-          "page_id": "p-006",
-          "children": []
-        }
-      ]
-    },
-    {
-      "name": "Investors",
-      "url": "https://www.company.com/investors/",
-      "section": "ir",
-      "page_id": "p-008",
-      "children": [
-        {
-          "name": "Results",
-          "url": "https://www.company.com/investors/results/",
-          "section": "ir",
-          "page_id": "p-009",
-          "children": []
+          "name": "{sub-section key}",
+          "label": "{display name}",
+          "url": "{URL}",
+          "description": "",
+          "presence_quality": "",
+          "word_count": 0
         }
       ]
     }
@@ -286,136 +326,117 @@ The structure must be compatible with D3.js treemap rendering (used by `mercury-
 }
 ```
 
-**Rules:**
-- Only include pages that were actually crawled (have a page evidence file)
-- Use the page's `page_title` or H1 for the `name` field, falling back to the last URL path segment
-- Pages not fitting into the tree (orphans) go under a top-level "Other" node
-- Do not infer pages that were not crawled — the tree reflects what was observed
-- URLs from the `firecrawl_map` inventory that were NOT crawled should be listed separately as `uncrawled_urls` at the top level of the structure file
+**Display names** — use plain English labels, not snake_case keys:
+
+| section_key | label |
+|-------------|-------|
+| `homepage` | Home |
+| `investor_relations` | Investors |
+| `investment_case` | Investment case |
+| `financial_results` | Results |
+| `annual_report` | Annual report |
+| `governance` | Governance |
+| `esg_sustainability` | Sustainability |
+| `responsible_ai` | Responsible AI |
+| `careers` | Careers |
+| `employer_brand` | Life at [Company] |
+| `news_media` | Newsroom |
+| `about` | About |
+| `strategy` | Strategy |
+| `leadership` | Leadership |
+| `contact` | Contact |
+
+Include only sections with `presence_quality` that is not `absent`. Absent sections are recorded in the evidence manifest's negative verification results — they do not appear as nodes in the site structure tree.
+
+Include sub-pages as children where they were discovered and scraped. Leaf nodes with no children omit the `children` field.
 
 ---
 
-## Page evidence file schema
+## Save outputs
 
-Save one JSON file per page crawled. Files are saved to `{company}-crawl/pages/`.
+Save both files on completion:
 
+1. `{company}-ms-crawl-manifest.json` — complete evidence manifest (structure below)
+2. `{company}-ms-crawl-structure.json` — D3-compatible site tree
+
+**Evidence manifest structure:**
 ```json
 {
-  "page_id": "p-001",
-  "company": "Company Name plc",
-  "domain": "company.com",
-  "url": "https://www.company.com/investors",
-  "crawl_pass": 2,
-  "tool_used": "web_fetch",
-  "fetched_at": "2026-03-12T11:30:00Z",
-  "page_title": "Investors — Company Name",
-  "h1": "Investor relations",
-  "meta_description": "Access Company Name's investor relations section for results, reports, and shareholder information.",
-  "word_count": 1240,
-  "classification": {
-    "section": "ir",
-    "page_type": "ir_landing",
-    "tags": ["ir", "listed", "navigation_hub"]
-  },
-  "content_summary": "IR landing page with navigation links to results, reports, financial calendar, and shareholder centre. Share price ticker present in header. No investment case or upcoming events module on the landing page.",
-  "documents_linked": [
-    {
-      "url": "https://www.company.com/investors/annual-report-2025.pdf",
-      "label": "Annual Report 2025",
-      "type": "annual_report",
-      "file_size_approx": "4.9MB"
-    }
-  ],
-  "navigation_links": [
-    "/investors/results",
-    "/investors/annual-report",
-    "/investors/financial-calendar",
-    "/investors/shareholders",
-    "/investors/contact"
-  ],
-  "notable_absences": [
-    "No investment case or equity story visible on landing page",
-    "No upcoming events module",
-    "No latest results snapshot"
-  ],
-  "raw_content_truncated": false
-}
-```
-
-**Notable absences field:** Use this to record what is not present on the page. Apply `NEGATIVE_VERIFICATION_CONCEPTS.md` — scope absence to the specific page, not the site. "No investment case visible on the IR landing page" is correct. "No investment case on the site" requires evidence from multiple sections.
-
----
-
-## Crawl manifest schema
-
-Save `{company}-ms-crawl-manifest.json` on completion.
-
-```json
-{
-  "company": "Company Name plc",
-  "domain": "company.com",
   "stage": "ms-crawl",
-  "crawl_started_at": "2026-03-12T11:00:00Z",
-  "crawl_completed_at": "2026-03-12T12:15:00Z",
-  "brief_manifest_used": "{company}-ms-brief-evidence.json",
-  "capabilities_used": ["web_fetch", "firecrawl_scrape"],
-  "credits_used": {
-    "firecrawl_map": 0,
-    "firecrawl_scrape": 28,
-    "firecrawl_browser": 0,
-    "total": 28
+  "company": "",
+  "domain": "",
+  "crawled_at": "",
+  "crawl_summary": {},
+  "section_inventory": {},
+  "negative_verification": {},
+  "subdomains": [],
+  "careers_platform": "",
+  "document_checklist": {
+    "priority_pass_complete": true,
+    "extended_pass_complete": false,
+    "items_checked": 0,
+    "items": []
   },
-  "passes_completed": {
-    "pass_1_corporate": { "pages_fetched": 7, "pages_failed": 0 },
-    "pass_2_ir": { "pages_fetched": 9, "documents_extracted": 2, "pages_failed": 1 },
-    "pass_3_sustainability": { "pages_fetched": 6, "documents_extracted": 1, "pages_failed": 0 },
-    "pass_4_careers": { "pages_fetched": 7, "pages_failed": 0 },
-    "pass_5_news_governance": { "pages_fetched": 9, "pages_failed": 0 }
-  },
-  "pages_crawled": 38,
-  "documents_extracted": 3,
-  "structure_file": "{company}-ms-crawl-structure.json",
-  "pages_directory": "{company}-crawl/pages/",
-  "gaps": [
-    "IR results page (p-017) returned HTTP 403 — content not retrieved",
-    "CMD deck not crawled — not approved for extraction in ms-brief stage"
-  ],
-  "scope_exclusions": [
-    "Regional subdomains not crawled (chile.company.com, australia.company.com)"
-  ]
+  "evidence_gaps": []
 }
 ```
 
----
-
-## Output files
-
-- `{company}-ms-crawl-manifest.json` — crawl summary and metadata
-- `{company}-crawl/pages/p-NNN.json` — one file per page crawled
-- `{company}-ms-crawl-structure.json` — hierarchical site tree (D3 treemap compatible)
+`evidence_gaps`: record every condition where data could not be collected — blocked pages, robots.txt exclusions, JavaScript-rendered content, timeouts. These feed directly into the ms-findings limitations section.
 
 ---
 
-## Handoff to ms-findings
+## Subdomain handling
 
-MS-Findings reads:
-1. `{company}-ms-brief-evidence.json` — company identity, benchmark data, situational context
-2. `{company}-ms-crawl-manifest.json` — crawl summary and page directory
-3. `{company}-ms-crawl-structure.json` — site tree for rendering
-4. `{company}-crawl/pages/*.json` — page-level evidence pack
+If subdomains are found (e.g. `careers.{domain}`, `investors.{domain}`):
 
-MS-Findings does not run until the crawl manifest is saved and all pass gaps are recorded. Incomplete crawls are valid — gaps are recorded and MS-Findings reasons from what is present.
+1. Apply section classification to the subdomain root URL
+2. Run `firecrawl_map` on the subdomain root only — do not deep-crawl it
+3. Note whether the subdomain uses visually different design from the main site (evidence for A09 and A12 archetype matching)
+4. Record under `crawl_summary.subdomains_found`
 
 ---
 
-## What not to include in page evidence files
+## Graceful degradation
 
-Page evidence files must not contain:
-- Evaluative language ("strong", "weak", "poor", "excellent")
-- Archetype scores or component pass/fail checks
-- Comparisons to peers or playbook criteria
-- Recommendations or suggested improvements
-- Claims about what the evidence implies
-- Share price data or financial metrics beyond what is factually on the page
+| Condition | Response |
+|-----------|----------|
+| sitemap.xml absent | Proceed with Sources 2–4; note in crawl_summary |
+| Homepage scrape fails | Skip Source 2 nav extraction; note gap |
+| firecrawl_map blocked | Rely on sitemap + nav; set `coverage_confidence: low` |
+| Pagination not found | Record section depth as `not_assessed` |
+| robots.txt blocks sections | Note restriction; do not assert absence |
+| Scrape returns >60K chars | Flag nav bloat; check CRAWL_CONFIG; do not pass to reasoning phase |
+| Subdomain blocks crawl | Note subdomain presence; record structure as `not_assessed` |
+| All sources partially fail | Produce manifest with available evidence; set `coverage_confidence: low`; surface in evidence_gaps |
 
-If you find yourself writing an evaluation, stop. That belongs in `ms-findings`. Record what is present. Record what is absent (bounded to this page). Nothing more.
+The crawl never fails silently. Every degradation is recorded in `crawl_summary` and surfaced as an evidence gap.
+
+---
+
+## Stage completion
+
+After saving both output files, show a clean summary:
+
+**Show:**
+- Pages discovered (total) and pages scraped (by tier)
+- Sections confirmed present (list section labels and presence quality)
+- Concepts confirmed absent (from negative verification)
+- Evidence gaps (blocked pages, robots restrictions, low coverage areas)
+- Subdomains found (if any)
+- Coverage confidence level
+
+**Do not show:** raw JSON, criterion observations, findings, or recommendations.
+
+**Offer:**
+- Continue to `/ms-findings`
+- Pause here (both files are saved — findings can run later)
+
+---
+
+## What this stage does not do
+
+- Produce findings, evaluations, or strategic implications
+- Assert absence without completing all three negative verification steps
+- Deep-crawl subdomains
+- Extract document contents (that is ms-brief's responsibility, with consultant approval)
+- Make tool calls after the evidence manifest is saved

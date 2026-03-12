@@ -1,315 +1,465 @@
 ---
 name: ms-findings
-description: >
-  Strategic synthesis for Mercury Strategy. Takes the ms-brief evidence manifest and ms-crawl
-  page evidence pack, constructs bounded claims, runs archetype checks against the audience and
-  capability libraries, identifies gaps and patterns, and produces a structured findings artefact
-  with strategic implications. This is a pure reasoning skill — no tool calls after the evidence
-  loading step. Invoke via /ms-findings <company name>.
+description: "Mercury Strategy reasoning stage 3 — archetype matching, audience analysis, elevation to strategic implications, and structured findings output. Use when the consultant runs /ms-findings. This stage makes no tool calls after evidence loading. It reasons over pre-collected evidence only."
 ---
 
-# MS-Findings — strategic synthesis
+# ms-findings — Mercury Strategy synthesis stage
 
-## Role in the Mercury Strategy pipeline
+Reasoning stage 3 of 3. Loads all evidence from the ms-brief and ms-crawl artefacts, matches against the 13 archetypes in `references/ARCHETYPE_LIBRARY.md`, assesses audience tier support against `references/AUDIENCE_LIBRARY.md`, elevates High-confidence patterns to strategic implications, and produces a structured findings artefact and rendered markdown report.
 
-MS-Findings is the third and final stage of the Mercury Strategy pipeline. It runs after `ms-crawl` and produces the deliverable.
-
-**The two-agent separation principle.** MS-Findings is the reasoning agent. Its evidence is fixed — it is whatever `ms-brief` and `ms-crawl` collected. MS-Findings cannot make tool calls to fetch new evidence. If a gap exists in the evidence, it is recorded as a limitation, not filled by an additional fetch.
-
-**What this skill does:**
-- Loads evidence from `ms-brief` and `ms-crawl` outputs
-- Constructs bounded claims following the claim builder rules
-- Checks pages against archetypes in `ARCHETYPE_LIBRARY.md` and audience needs in `AUDIENCE_LIBRARY.md`
-- Identifies capability patterns using `CAPABILITY_LIBRARY.md`
-- Synthesises findings into strategic implications (never criterion-level observations)
-- Produces a structured findings artefact and rendered report
-
-**What this skill does not do:**
-- It does not make tool calls to fetch additional evidence
-- It does not produce IQ scores or percentage scores
-- It does not use "best practice" language
-- It does not produce criterion-level observations in the findings body — implications only
-- It does not compare the company to peers (that is a separate stage if commissioned)
+**Critical rule:** After Phase A (evidence loading) is complete, no further tool calls are made. All reasoning operates over the evidence already in the context window.
 
 ---
 
-## Reference files
+## Before you begin
 
-- `FINDINGS_TEMPLATE.md` — the required output structure and section-by-section instructions
-- `ARCHETYPE_LIBRARY.md` — page archetypes with expected components (core and enhanced)
-- `AUDIENCE_LIBRARY.md` — audience types with information needs and journey expectations
-- `CAPABILITY_LIBRARY.md` — IDX service capabilities and how they map to findings
-- `NEGATIVE_VERIFICATION_CONCEPTS.md` — bounded absence language rules
+Read `references/FINDINGS_TEMPLATE.md` in full. Then read `references/ARCHETYPE_LIBRARY.md`, `references/AUDIENCE_LIBRARY.md`, and `references/CAPABILITY_LIBRARY.md`. These files are the authoritative sources for this stage. Do not begin reasoning without reading them.
 
----
-
-## Prerequisites
-
-Both of the following must exist:
+Check that both of the following exist:
 - `{company}-ms-brief-evidence.json`
-- `{company}-ms-crawl-manifest.json` and the pages directory it references
+- `{company}-ms-crawl-manifest.json` and `{company}-ms-crawl-structure.json`
 
-If the brief manifest is missing, surface a clear message and halt.
-If the crawl manifest is missing but the brief manifest exists, surface a clear message. Offer to run MS-Findings from brief evidence only — with a declared limitation that page-level evidence is absent.
-
----
-
-## Core principles
-
-**1. No tool calls after evidence loading.** Load all evidence files at the start of Phase B. Then reason from what you have. If you discover a gap, record it as a limitation. Do not attempt to fill it.
-
-**2. Implications only in the findings body.** The findings report does not list criterion-level observations. It does not say "the IR landing page is missing component ir-07". It says what that absence means strategically — for an investor audience, for a competitor gap, for an IDX opportunity. The elevation principle: every finding must be expressed at the level of strategic implication.
-
-**3. Archetype confidence thresholds.** The archetype check produces a confidence level for each archetype assessed. Only archetypes meeting their threshold enter the findings body:
-   - **High confidence** (3+ criteria with evidence): include in main findings body
-   - **Medium confidence** (2 criteria with evidence): include in appendix with declared confidence level
-   - **Low confidence** (fewer than 2 criteria): discard — record in limitations
-
-**4. No IQ scoring, no percentage scores.** Do not produce numerical scores. Do not produce percentage-based assessments. The archetype check uses component counts internally to reach confidence thresholds — these counts are not surfaced in the report.
-
-**5. No "best practice" language.** Do not write "best practice suggests", "industry standard is", or "leading companies do". Instead: name a specific archetype expectation from `ARCHETYPE_LIBRARY.md`, or name a specific audience need from `AUDIENCE_LIBRARY.md`.
-
-**6. Bounded claims.** Every claim is scoped to what was actually assessed. See claim construction below and `NEGATIVE_VERIFICATION_CONCEPTS.md`.
+If the crawl manifest is missing, surface a clear message. If only the brief manifest exists, offer to proceed with declared limitations — note that absence claims cannot be made and archetype evidence will be incomplete.
 
 ---
 
-## Phase A — Evidence loading (one-time, tool calls permitted)
+## Phase A — Evidence loading (tool calls permitted here only)
 
-At the start of the run, load all evidence:
+Load and read the following files in order. After this phase, make no further tool calls.
 
-1. Load `{company}-ms-brief-evidence.json`
-2. Load `{company}-ms-crawl-manifest.json`
-3. Load all page evidence files from the pages directory listed in the crawl manifest
+1. `{company}-ms-brief-evidence.json`
+2. `{company}-ms-crawl-manifest.json`
+3. `{company}-ms-crawl-structure.json`
+4. All individual page evidence from `crawl_manifest.section_inventory`
 
-Record what was loaded in the findings artefact header:
+After loading, record a summary of what was loaded:
 ```json
 {
   "evidence_loaded": {
-    "brief_manifest": "{company}-ms-brief-evidence.json",
-    "crawl_manifest": "{company}-ms-crawl-manifest.json",
-    "pages_loaded": 38,
-    "documents_loaded": 3,
-    "evidence_gaps": ["IR results page not retrieved (HTTP 403)", "CMD deck not extracted"]
+    "brief_manifest": true,
+    "crawl_manifest": true,
+    "pages_loaded": 0,
+    "sections_assessed": [],
+    "negative_verification_results": 0,
+    "evidence_gaps": []
   }
 }
 ```
 
-After this step, **no further tool calls**. Reasoning begins.
+Carry the `evidence_gaps` from both manifests forward — they become the limitations section of the output.
 
 ---
 
-## Phase B — Reasoning
+## Phase B — Reasoning (no tool calls)
 
-All of Phase B runs without tool calls. Work through the steps in sequence.
+Work through steps B1–B11 in order. Do not skip steps or reorder them. All observations must be derived from the loaded evidence — do not infer, assume, or supplement from general knowledge.
 
-### Step 1 — Company context summary
+---
 
-From the brief manifest, extract and summarise:
-- Company identity, sector, listing status
-- Benchmark position (if available): index, rank, category strengths and weaknesses — reported as descriptive context, not as a score
-- Situational context: material events from the last six months, flagged material events from the checklist
-- Scope focus area
+### B1 — Company context
 
-This becomes the opening section of the findings report.
+From the brief manifest, establish:
+- Company type (listed / private; sector; scale; listing exchange and index if applicable)
+- Primary domain and scope
+- Benchmark position (if in dataset)
+- Material events in the last 12 months
+- Coverage confidence from the crawl manifest
 
-### Step 2 — Archetype checks
+Material events affect interpretation of findings. A stale strategy page is a different signal before and after a CEO change. A thin careers section is different for a company that recently announced a hiring freeze. Flag material events in the consultant notes section of the output.
 
-For each page archetype that is relevant to the scope focus (defined in `ARCHETYPE_LIBRARY.md`), check the page evidence against the archetype's expected components.
+---
 
-**Process:**
-1. Identify which pages in the evidence pack correspond to this archetype
-2. For each expected component (core and enhanced), check: is there evidence this component is present? Is there evidence it is absent? Or is it not assessed (no evidence either way)?
-3. Record presence / absence / not_assessed for each component, with the evidence source
-4. Count confirmed-present components to determine confidence level
+### B2 — Select relevant audience tiers
+
+Using the company type established in B1, select the relevant audience tiers from `references/AUDIENCE_LIBRARY.md` using the selection table in `references/FINDINGS_TEMPLATE.md`:
+
+| Company type | Always include | Include if applicable |
+|-------------|---------------|----------------------|
+| Listed company (any) | Tiers 1, 2, 7 | Tier 10 |
+| Large industrial / B2B | Tiers 3, 7 | Tiers 5, 9 |
+| Agency / consultancy | Tier 4 | Tier 7 |
+| Technology / SaaS | Tiers 8, 4 | Tiers 7, 10 |
+| Any with active hiring | Tier 6 | — |
+| Multi-market global | All selected tiers | Tier 9 |
+
+Record the selected tiers. Do not apply all 10 tiers to every company.
+
+---
+
+### B3 — Archetype matching
+
+For each of the 13 archetypes in `references/ARCHETYPE_LIBRARY.md`, check every criterion against the loaded evidence:
+
+- **Criterion met** — supporting evidence exists in the crawl manifest (scraped page confirms the signal described in the criterion)
+- **Criterion not met** — no supporting evidence, or counter-evidence found
+- **Not assessable** — the required page type was not crawled or is in the evidence gaps list
+
+Count only met criteria toward the confidence threshold. Not-assessable criteria do not count for or against.
 
 **Confidence thresholds:**
-- **High** (3+ components with direct evidence — present or confirmed absent): enter main findings body
-- **Medium** (2 components with direct evidence): enter appendix
-- **Low** (fewer than 2): discard, record in limitations as "insufficient evidence to assess {archetype}"
 
-**What enters the findings body is implications, not component lists.** The component check is the analytical step. What gets written is what the pattern means.
+| Met criteria | Confidence | Action |
+|-------------|------------|--------|
+| 3 or more | High | Elevate to main report body |
+| 2 | Medium | Appendix only, flagged for consultant |
+| 1 | Low | Discard |
+| 0 | None | Discard |
 
-Example of what NOT to write:
-> "The IR landing page is missing components ir-06 (latest results snapshot), ir-07 (investment case), and ir-08 (upcoming events module)."
+Record for each archetype:
+```json
+{
+  "archetype_id": "A01",
+  "archetype_name": "The document repository",
+  "confidence": "high | medium | low | none",
+  "criteria_met": ["A01-1", "A01-3", "A01-5"],
+  "criteria_not_met": ["A01-2", "A01-4"],
+  "criteria_not_assessable": ["A01-6"],
+  "evidence_notes": ""
+}
+```
 
-Example of what TO write:
-> "The IR landing page requires investors to navigate to find the information they arrive seeking — current performance data, upcoming dates, and the investment rationale. Investors who cannot quickly answer 'why hold' and 'what's next' are more likely to disengage."
+After assessing all 13 archetypes, check the co-occurrence patterns in `references/ARCHETYPE_LIBRARY.md`. Where two co-occurring archetypes are both High confidence, treat this as a systemic finding — frame the implication at the systemic level rather than as two separate issues.
 
-### Step 3 — Audience journey assessment
+---
 
-Using `AUDIENCE_LIBRARY.md`, assess the site's performance against the information needs of audiences relevant to the scope.
+### B4 — Audience journey assessment
 
-For each audience type in scope:
-1. Identify the journey stages and key information needs
-2. Map available page evidence to those needs — is the information present, navigable, and accessible?
-3. Record which needs are met, which are unmet, and which cannot be assessed from available evidence
+For each selected audience tier, work through the three steps in `references/FINDINGS_TEMPLATE.md`:
 
-The audience assessment feeds the findings body. Express as: what the audience experiences, what they cannot easily find, and what that means.
+**Step 1** — Check access pattern support: Does the site have the content this audience needs? Is the navigation pathway accessible within 3 clicks? Are the failure signals from `references/AUDIENCE_LIBRARY.md` present?
 
-### Step 4 — Capability patterns
+**Step 2** — Classify each tier:
 
-Using `CAPABILITY_LIBRARY.md`, identify which IDX service capabilities are most relevant given the patterns observed in the archetype and audience assessments.
+| Classification | Meaning |
+|---------------|---------| 
+| Served | Key content needs met, access pattern supported, no failure signals |
+| Underserved | Some content present but access pattern incomplete or failure signals present |
+| Absent | No content layer, pathway, or signals for this audience type |
 
-Capability mapping is an internal analytical step — it informs how findings are framed as opportunities. It does not appear verbatim in the client-facing report. The findings report expresses opportunities in terms of audience outcomes and strategic effect, not IDX service names.
+**Step 3** — Record classification and evidence notes.
 
-### Step 5 — Claim construction
+Surface only Underserved and Absent tiers in the main report body (Section 4). Served tiers go to the appendix.
 
-Before building findings, construct the claim ledger. Every finding must be traceable to one or more claims.
+---
 
-**Claim types used in MS-Findings:**
+### B5 — Capability signals
 
-| Type | When to use |
-|------|-------------|
-| `fact` | Directly verifiable from page evidence (page title, H1, document link present) |
-| `inference` | Reasonable conclusion from page evidence pattern |
-| `gap` | Bounded absence — expected component not found in assessed pages |
-| `judgement_support` | Strategic implication derived from one or more claims |
+For each High-confidence archetype, look up the mapped capabilities in `references/CAPABILITY_LIBRARY.md`.
 
-**Scope discipline:** Every claim is scoped to what was actually assessed. See `NEGATIVE_VERIFICATION_CONCEPTS.md` for required language patterns.
+Apply the sequencing rule: where both C09 (AEO audit) and C13 (AI readiness programme) are implicated by A11, surface C09 first.
 
-**Required claim fields:**
+Surface a maximum of four capability signals total, prioritising:
+1. Archetypes with the strongest evidence (most criteria met)
+2. Most direct commercial relevance to this client's profile
+
+Do not surface capability signals for Medium-confidence archetypes.
+
+---
+
+### B6 — Peer calibration
+
+Load the `peer_context` block from `{company}-ms-brief-evidence.json`. If no peer_context is present (peer research was skipped or the brief manifest is missing), record a limitations note and proceed — peer calibration is not a blocking dependency.
+
+**Step 1 — Feature matrix comparison**
+
+Read the feature matrix from `peer_context.feature_matrix`. For each feature (F01–F39), compare the client's status against the peer set:
+
+- **Baseline expectation** — feature is `present` or `present_thin` for 3 or more peers: treat as a standard component for this company type. Client absence is a gap against baseline, not against best practice.
+- **Leading feature** — feature is `present` for the client but `absent` or `present_thin` for most peers: note as a potential strength.
+- **Sector-wide gap** — feature is `absent` for the client and most or all peers: this is a sector pattern, not a client-specific failing. Frame it as a sector opportunity, not a client gap.
+
+**Step 2 — Refine archetype framing**
+
+For each High-confidence archetype from B3, check whether peer evidence strengthens or complicates the framing:
+
+- If most peers share the same archetype pattern: the client's issue is sector-wide — frame as "this is a widespread pattern among [index/sector] companies, and [client] is no exception"
+- If the client is notably worse than peers: strengthen the finding with named peer examples
+- If a peer has clearly addressed the pattern: use as a named positive example in benchmark framing
+
+**Step 3 — Compile peer calibration block**
+
+```json
+{
+  "peer_calibration": {
+    "peers_researched": [],
+    "baseline_expectations": [
+      {
+        "feature_id": "F01",
+        "feature": "",
+        "client_status": "present | absent | ...",
+        "peer_consensus": "present | absent | mixed",
+        "framing": "baseline_gap | leading | sector_gap | not_assessed"
+      }
+    ],
+    "named_examples": [
+      {
+        "peer": "",
+        "feature": "",
+        "url": "",
+        "notes": ""
+      }
+    ],
+    "sector_patterns": []
+  }
+}
+```
+
+Named examples are used in benchmark framing in B7 findings. Each named example must have a confirmed URL from the peer research — do not use peer examples that were `not_assessed` in the feature matrix.
+
+---
+
+### B7 — Claim construction
+
+For each finding that will appear in the main report body, construct a claim record:
+
 ```json
 {
   "claim_id": "C-001",
-  "statement": "The IR landing page does not display current performance data or upcoming events without navigation",
-  "claim_type": "gap",
-  "scope": "IR landing page (p-008)",
-  "certainty": "observed",
-  "method": "web_fetch",
-  "evidence_ids": ["p-008"],
-  "status": "active"
+  "statement": "",
+  "claim_type": "fact | inference | gap | judgement_support",
+  "scope": "Which pages or sections this claim is based on — never site-wide unless multi-section evidence exists",
+  "certainty": "confirmed | observed | inferred | not_assessed",
+  "evidence_source": "crawl manifest section and page URL(s)",
+  "archetype_criteria": ["A01-1", "A01-3"]
 }
 ```
 
-**Hard rules — violations cause rejection:**
-1. Claims using site-wide language ("the site", "there is no", "nowhere on") require evidence from 2+ distinct sections
-2. Negative claims must use bounded language matching the actual assessment scope
-3. Certainty vocabulary: only `confirmed`, `observed`, `inferred`, `not_assessed`
+**Certainty vocabulary:**
+- `confirmed` — directly observed in scraped content
+- `observed` — visible in URL inventory or navigation structure
+- `inferred` — reasoned from pattern of confirmed evidence
+- `not_assessed` — page type not crawled or in evidence gaps
 
-### Step 6 — Findings construction
+**Scope discipline:** A claim's scope must match the evidence that supports it. If only the IR landing page was scraped, the claim scope is `"IR landing page only"` — not `"the investor relations section"` and never `"the site"`. Site-wide claims require multi-section evidence.
 
-Build findings from validated claims. Group by theme, not by section or archetype.
+---
 
-**Elevation principle:** Every finding is expressed as a strategic implication, not a criterion-level observation. Ask: what does this mean for the investor / the analyst / the talent prospect? What is the opportunity? What is the competitive risk?
+### B8 — Findings construction
 
-**Finding structure:**
+Construct findings for the main report body. Each finding maps to one High-confidence archetype.
+
+Apply the elevation test from `references/FINDINGS_TEMPLATE.md` before including any finding:
+1. Does it name a specific audience affected?
+2. Does it explain the consequence for that audience?
+3. Does it use benchmark framing rather than best-practice framing?
+4. Is it grounded in evidence from the manifest?
+5. Could it not appear unchanged in a generic website audit template?
+
+If any answer is no, the finding belongs in the appendix, not the main body.
+
+**Benchmark framing (required):** "For a FTSE 250 industrial company with an active investor relations programme, an investment case page is a standard component."
+
+**Best-practice framing (forbidden):** "Best practice recommends an investment case page on IR sites."
+
+Each finding in the artefact:
 ```json
 {
   "finding_id": "F-001",
-  "theme": "Investor orientation",
+  "theme": "",
+  "severity": "significant | moderate | minor",
   "classification": "INFERENCE",
-  "implication": "The IR section requires investors to navigate before finding the information they typically arrive seeking.",
-  "claim_ids": ["C-001", "C-002", "C-003"],
-  "confidence": "multiple sources",
-  "audience_impact": ["institutional_investor", "retail_investor"],
-  "severity": "significant"
+  "implication": "",
+  "audience_impact": ["Institutional investors — Tier 1.1", "Sell-side analysts — Tier 1.4"],
+  "claim_ids": ["C-001", "C-003"],
+  "archetype_id": "A01",
+  "archetype_confidence": "high"
 }
 ```
 
-**Severity levels:**
-- `significant` — affects a primary audience journey or creates a material gap vs audience expectations
-- `moderate` — affects a secondary journey or creates a gap vs enhanced expectations
-- `minor` — improvement opportunity with limited audience impact
+**Severity:**
+- `significant` — directly affects the company's ability to serve a primary audience tier or supports a High-confidence archetype with 5+ criteria
+- `moderate` — affects a secondary audience or supports a High-confidence archetype with 3–4 criteria
+- `minor` — affects a tertiary audience or is a co-occurrence signal
 
-**What not to include in findings:**
-- Component counts or checklists
-- Percentage scores or numerical ratings
-- "Best practice" references without a named archetype or audience need
-- Share price, analyst opinions, financial performance commentary
+---
 
-### Step 7 — Gap summary
+### B9 — Gap summary
 
-Produce a structured gap summary from gap-type claims. Group gaps by audience and severity.
+Construct a gaps array from the negative verification results in the crawl manifest. Only include gaps confirmed as `absent` by the three-step verification procedure. Do not include `not_assessed` items as gaps.
 
-The gap summary is distinct from the findings body. It is a referenced inventory — it exists to allow a consultant to quickly locate specific gaps without reading the full findings narrative.
-
-Each gap entry:
 ```json
 {
   "gap_id": "G-001",
-  "section": "Investor relations",
-  "description": "No investment case or equity story visible in reviewed IR pages",
-  "scope": "IR landing page and IR sub-navigation (reviewed pages)",
-  "audience": ["institutional_investor", "analyst"],
-  "severity": "significant",
-  "claim_ids": ["C-005"]
+  "concept": "",
+  "description": "",
+  "section": "",
+  "scope": "",
+  "severity": "significant | moderate | minor",
+  "verified_by": "path_match | direct_probe | site_search",
+  "claim_ids": [],
+  "archetype_criteria": []
 }
 ```
 
-### Step 8 — Strategic implications
+---
 
-The strategic implications section synthesises the most important patterns into 3–5 high-level statements about what the evidence means for the company's digital communications position.
+### B10 — Strategic implications
 
-These are `[JUDGEMENT]`-tagged statements. They are the only section where judgement-type claims appear. They must reference the finding IDs that support them.
+Distil the High-confidence archetype findings into strategic implications for `synthesis.implications`. Each implication is a narrative statement (2–4 sentences) describing what the pattern means for the company, not what the criteria show.
 
-**What makes a strong strategic implication:**
-- It speaks to audience effect, not page structure
-- It identifies a pattern across multiple findings, not a single observation
-- It points towards an outcome (what could change and why it matters), not a prescription (what to do)
+```json
+{
+  "synthesis": {
+    "executive_summary": "",
+    "implications": [
+      {
+        "title": "",
+        "statement": "",
+        "archetype_ids": ["A01"],
+        "capability_ids": ["C04"],
+        "claim_ids": ["C-001", "C-002"]
+      }
+    ]
+  }
+}
+```
 
-### Step 9 — Compile findings artefact
+Maximum five implications, ordered by evidence strength (most criteria met first). Where two co-occurring archetypes produced a systemic finding, merge their implications into one.
 
-Save `{company}-ms-findings-artefact.json` using the schema in `FINDINGS_TEMPLATE.md`.
+---
 
-The artefact contains:
-- Evidence loading summary
-- Claims ledger (`claims[]` and `claim_builder_errors[]`)
-- Archetype check results (including confidence levels and what was discarded)
-- Audience assessment results
-- Findings (`findings[]`)
-- Gap summary (`gaps[]`)
-- Strategic implications (`synthesis.implications[]`)
-- Limitations
-- Compliance record
+### B11 — Compile the artefact
 
-### Step 10 — Rendered report
+```json
+{
+  "stage": "ms-findings",
+  "company": "",
+  "domain": "",
+  "generated_at": "",
+  "evidence_loaded": {},
+  "company_context": {
+    "company_type": "",
+    "sector": "",
+    "listing_status": "",
+    "benchmark": {},
+    "material_events": [],
+    "coverage_confidence": ""
+  },
+  "archetype_results": [],
+  "audience_assessment": [],
+  "peer_calibration": {},
+  "claims": [],
+  "findings": [],
+  "gaps": [],
+  "synthesis": {
+    "executive_summary": "",
+    "implications": []
+  },
+  "site_structure": null,
+  "limitations": [],
+  "appendix": {
+    "archetype_evidence_tables": [],
+    "audience_failure_signals": [],
+    "peer_feature_matrix": {},
+    "consultant_notes": []
+  }
+}
+```
 
-Assemble the final markdown report from the validated artefact. Follow the section structure in `FINDINGS_TEMPLATE.md` exactly.
+**`site_structure`:** Load the contents of `{company}-ms-crawl-structure.json` and embed it here. This is the field the adapter reads to populate `reportData.sitemapData` for the HTML directory tree and Excel site structure sheet.
 
-**Section order:**
-1. Company context
-2. Strategic implications (lead with the most important)
-3. Findings by theme (main body — implications only, no criterion lists)
-4. Gap summary (referenced inventory)
-5. Audience assessment highlights
-6. Limitations
-7. Appendix A: medium-confidence archetype notes
-8. Appendix B: claims and evidence register
+**`limitations`:** Carry forward all evidence gaps from both manifests. Each limitation records the gap, its source, and whether it affected any archetype confidence determination.
 
-### Step 11 — Compliance self-check
+---
 
-Before saving, run these checks:
+### B12 — Self-check
 
-| Check | Rule |
-|-------|------|
-| No criterion lists in findings body | Findings express implications, not component checks |
-| No IQ scores or percentage scores | Not permitted |
-| No "best practice" language | Replace with named archetype expectation or audience need |
-| No site-wide claims without multi-section evidence | Scope discipline |
-| Every finding has claim_ids | Traceability |
-| Every gap is bounded to assessed scope | Bounded absence |
-| Archetype confidence thresholds applied | Low-confidence archetypes discarded |
-| No tool calls made after Phase A | Collection/reasoning separation |
+Before producing any output, run the self-check from `references/FINDINGS_TEMPLATE.md`:
+
+**Peer calibration check**
+- [ ] peer_context loaded from brief manifest (or limitation noted if absent)
+- [ ] Feature matrix applied — baseline expectations, leading features, sector gaps classified
+- [ ] Named peer examples confirmed against feature matrix (not_assessed examples not cited)
+- [ ] Archetype framing updated where peer evidence strengthens or complicates it
+
+**Elevation check**
+- [ ] No criterion-level observation appears in the main report body
+- [ ] Every finding names a specific audience
+- [ ] Every finding uses benchmark framing, not best-practice framing
+- [ ] Every finding is traceable to the evidence manifest
+
+**Archetype check**
+- [ ] Only High-confidence archetypes appear in Section 3
+- [ ] Medium-confidence archetypes are in the appendix only
+- [ ] Co-occurrence patterns checked and applied
+- [ ] Maximum 5 subsections in Section 3
+
+**Audience check**
+- [ ] Only relevant audience tiers selected for this company type
+- [ ] Only Underserved and Absent tiers appear in Section 4
+- [ ] Maximum 6 paragraphs in Section 4
+
+**Capability check**
+- [ ] Capability signals for High-confidence archetypes only
+- [ ] Maximum 4 capability signals
+- [ ] No recommendation language — consequence framing only
+- [ ] AEO/AI sequencing: C09 before C13 where applicable
+
+**Output constraints check**
+- [ ] British English throughout
+- [ ] No archetype codes (A01, C03 etc.) in client-facing sections
+- [ ] No percentage scores in main report body
+- [ ] No mention of Firecrawl, BigQuery, or technical infrastructure
+- [ ] All absence claims verified against negative verification results
 
 ---
 
 ## Output files
 
-- `{company}-ms-findings-artefact.json` — structured findings with claims, gaps, and synthesis
-- `{company}-ms-findings.md` — rendered markdown report
+### `{company}-ms-findings-artefact.json`
+
+The complete structured artefact as defined in B10. This is the primary output — it is what the adapter reads to build `reportData` for all renderers.
+
+### `{company}-ms-findings.md`
+
+Rendered markdown report following the section order from `references/FINDINGS_TEMPLATE.md`:
+
+**Main report body:**
+1. Executive summary (80–120 words, prose not bullets)
+2. Company and site context (100–150 words)
+3. Strategic implications (one subsection per High-confidence archetype, 150–250 words each, maximum 5)
+4. Audience analysis (one paragraph per Underserved/Absent tier, 80–120 words each, maximum 6)
+5. Commercial signal (one paragraph per capability, 60–100 words each, maximum 4)
+6. Consultant notes (5–10 bullets)
+
+**Appendix:**
+- A. Archetype evidence tables (criterion-level observations for each High and Medium-confidence archetype)
+- B. Audience failure signals (specific observations per audience tier)
+- C. Peer feature matrix (F01–F39 comparison across client and peer set)
+- D. Document checklist results
+- E. URL classification output
+- F. Evidence gaps and limitations
 
 ---
 
-## Response guidelines for the consultant
+## Output constraints (non-negotiable)
 
-After saving the artefact and report, present a clean summary:
+- British English spelling throughout
+- No archetype codes (A01, A03 etc.) in Sections 1–6 — they are internal labels
+- No percentage scores or IQ-style ratings in the main report body
+- No phrases: "best practice", "you should", "we recommend" in Sections 1–5
+- No mention of Firecrawl, BigQuery, APIs, or technical infrastructure
+- All absence claims must be verified — `verified_by` field must be `path_match`, `direct_probe`, or `site_search`, not `not_run`
+- Peer comparison claims must be grounded in data from the brief or crawl — do not invent peer benchmarks
 
-- Stage name and company
-- Number of findings by severity (significant / moderate / minor)
-- Number of gaps identified
+---
+
+## Stage completion
+
+After saving both output files, show a clean summary:
+
+**Show:**
+- Findings by severity (significant / moderate / minor — counts)
+- Gaps identified (count)
 - Top 3 strategic implications (one sentence each)
-- Limitations declared (what was not assessed)
+- Limitations (if any materially affect the findings)
 
-Do not show raw JSON or artefact structure. Do not list criterion-level observations. Lead with the implications.
+**Offer output formats:**
+- **HTML** — interactive presentation with directory tree
+- **Word** — branded .docx
+- **Slides** — branded .pptx
+- **Excel** — structured workbook with site structure sheet
 
-Offer: download as HTML / Word / Slides.
+**Render on request** — when the consultant picks a format, use `mercury-output.js` `renderStage()` with `stage: 'ms_findings'`.
+
+Do not show raw JSON. Do not show criterion-level observations in the summary — lead with the strategic implications.
