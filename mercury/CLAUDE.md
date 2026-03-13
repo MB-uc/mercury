@@ -16,7 +16,7 @@ Mercury prepares IDX consultants for client engagements using proprietary IDX da
 | `/mercury:all <company>` | Full pipeline — runs all four stages in sequence |
 | `/mercury:present <company>` | Render findings as an interactive HTML presentation |
 | `/ms-brief <company>` | Mercury Strategy — company intelligence and evidence manifest |
-| `/ms-crawl <company>` | Mercury Strategy — five-pass site discovery and structure |
+| `/ms-crawl <company>` | Mercury Strategy — four-source site discovery and structure |
 | `/ms-findings <company>` | Mercury Strategy — strategic synthesis and findings report |
 
 ## Skills
@@ -36,7 +36,7 @@ This plugin provides five skills:
 
 ### ms-crawl (Mercury Strategy — site discovery)
 - **Skill file:** `skills/ms-crawl/SKILL.md` — four-source structured website crawl
-- **Pipeline position:** Stage 2 of Mercury Strategy. Produces page evidence files, crawl manifest, and D3-treemap-compatible site structure
+- **Pipeline position:** Stage 2 of Mercury Strategy. Produces page evidence files, crawl manifest, and HTML directory tree site structure
 - **Key features:** Collection-only (no evaluation), escalation protocol (web_fetch → firecrawl_scrape → firecrawl_browser), credit budgeting
 
 ### ms-findings (Mercury Strategy — strategic synthesis)

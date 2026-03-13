@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 ALLOWED_CERTAINTY = {"confirmed", "observed", "inferred", "not_assessed"}
 ALLOWED_STATUS = {"active", "superseded", "disputed", "withdrawn", "provisional_legacy"}
 ALLOWED_CLAIM_TYPE = {"fact", "inference", "gap", "recommendation_support", "judgement_support"}
-ALLOWED_METHOD = {"web_fetch", "web_search", "benchmark_snapshot", "prior_stage_artefact", "manual_override"}
+ALLOWED_METHOD = {"web_fetch", "web_search", "benchmark_snapshot", "bigquery", "prior_stage_artefact", "manual_override"}
 ALLOWED_STAGE = {"brief", "compete", "sitemap", "meeting"}
 
 REQUIRED_TOP_LEVEL = ["stage", "entity", "domain", "claims", "findings"]

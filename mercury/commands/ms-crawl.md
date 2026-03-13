@@ -1,5 +1,5 @@
 ---
-description: Run the Mercury Strategy site discovery stage — five-pass structured crawl producing a page-level evidence pack
+description: Run the Mercury Strategy site discovery stage — four-source structured crawl producing a page-level evidence pack
 argument-hint: "<company name>"
 ---
 
@@ -19,7 +19,7 @@ Stage 1 evidence manifest (`{company}-ms-brief-evidence.json`) must exist. If mi
 
 ## What it produces
 
-A page-level evidence pack: one JSON file per page crawled, organised across five passes (corporate, IR, sustainability, careers, news/governance). A crawl manifest summarises what was collected, what was not, and credit usage.
+A page-level evidence pack: one JSON file per page crawled, organised across four sources (sitemap, navigation, firecrawl map, pagination). A crawl manifest summarises what was collected, what was not, and credit usage.
 
 ## Output files
 
@@ -28,7 +28,7 @@ A page-level evidence pack: one JSON file per page crawled, organised across fiv
 
 ## Instructions
 
-Read `skills/ms-crawl/SKILL.md` and follow the five-pass protocol. Check `references/CRAWL_CONFIG.md` for domain-specific Firecrawl overrides before any scrape call. Save the crawl manifest on completion.
+Read `skills/ms-crawl/SKILL.md` and follow the four-source protocol. Check `references/CRAWL_CONFIG.md` for domain-specific Firecrawl overrides before any scrape call. Save the crawl manifest on completion.
 
 ## Stage completion protocol
 

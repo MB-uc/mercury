@@ -444,9 +444,65 @@ Rendered markdown report following the section order from `references/FINDINGS_T
 
 ---
 
+## Phase G — Persist to BigQuery
+
+After saving both output files, store the structured results in BigQuery using the appropriate tool for the current environment:
+- **Cowork (Toolbox MCP):** `run_query`
+- **Local MCP:** `mcp__bigquery__query`
+
+This step is permitted even though Phase A is the only phase that normally makes tool calls — persistence is a post-output operation, not a reasoning step.
+
+**Project qualification:** The INSERT examples below use fully qualified table names (`diageo-rep-247.sector_intelligence.*`). In the Toolbox environment the default project is already configured, so unqualified names (`sector_intelligence.*`) also work. Use whichever form the Toolbox accepts without error.
+
+Generate a UUID for `analysis_id` (use `GENERATE_UUID()` in SQL). Execute the following INSERTs in order:
+
+### 1. `sector_intelligence.ms_analyses` — one row per analysis
+
+```sql
+INSERT INTO `diageo-rep-247.sector_intelligence.ms_analyses`
+  (analysis_id, company, domain, generated_at, executive_summary,
+   coverage_confidence, iq_score, index_name, sector, listing_status,
+   pages_loaded, sections_assessed, evidence_gaps, limitations, artefact_json)
+VALUES (
+  GENERATE_UUID(),
+  '{company}',
+  '{domain}',
+  TIMESTAMP('{generated_at}'),
+  '{synthesis.executive_summary}',
+  '{company_context.coverage_confidence}',
+  {company_context.benchmark.iq_score or NULL},
+  '{company_context.benchmark.index_name}',
+  '{company_context.sector}',
+  '{company_context.listing_status}',
+  {evidence_loaded.pages_loaded},
+  ['{sections_assessed_1}', ...],
+  ['{evidence_gaps_1}', ...],
+  ['{limitations_1}', ...],
+  '{full artefact JSON, escaped}'
+)
+```
+
+Use the returned `analysis_id` (or use a CTE with `GENERATE_UUID()` aliased) for the child table inserts.
+
+### 2. `sector_intelligence.ms_findings` — one row per finding
+
+Insert each item from the `findings[]` array.
+
+### 3. `sector_intelligence.ms_gaps` — one row per gap
+
+Insert each item from the `gaps[]` array.
+
+### 4. `sector_intelligence.ms_claims` — one row per claim
+
+Insert each item from the `claims[]` array.
+
+**Error handling:** If BigQuery is unavailable or the insert fails, log a warning but do not block the stage. The JSON artefact file is the primary output; BigQuery persistence is supplementary.
+
+---
+
 ## Stage completion
 
-After saving both output files, show a clean summary:
+After saving both output files and persisting to BigQuery, show a clean summary:
 
 **Show:**
 - Findings by severity (significant / moderate / minor — counts)

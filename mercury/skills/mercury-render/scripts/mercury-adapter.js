@@ -45,6 +45,17 @@ function extractIssues(artefact) {
 /**
  * Extract gaps from gap_analysis where status === "searched_not_found"
  */
+// Normalise severity/priority strings to the canonical High/Medium/Low enum
+// used by all renderers. Accepts both original-pipeline ("High"/"Medium"/"Low")
+// and ms-pipeline ("significant"/"moderate"/"minor") values.
+function normalisePriority(value) {
+  if (!value) return "Medium";
+  const v = String(value).toLowerCase();
+  if (v === "high" || v === "significant") return "High";
+  if (v === "low" || v === "minor") return "Low";
+  return "Medium"; // catches "medium", "moderate", and any unexpected value
+}
+
 function extractGaps(artefact) {
   return (artefact.gap_analysis || [])
     .filter(g => g.status === "searched_not_found")
@@ -52,7 +63,7 @@ function extractGaps(artefact) {
       gap: g.category || "",
       applies: g.applies_to || g.section_name || "",
       section: g.search_method || "",
-      priority: g.priority || "Medium",
+      priority: normalisePriority(g.priority || g.severity),
       detail: g.reasoning || g.search_method || "",
       claim_ids: g.claim_ids || [],
     }));
@@ -66,6 +77,9 @@ function extractTalkingPoints(artefact) {
   return priorities.map(p => ({
     title: p.recommendation || "",
     detail: p.rationale || "",
+    // `priority` (numeric rank) and `effort`/`impact` are carried through for
+    // future renderer use (e.g. a priority matrix view) but are not currently
+    // consumed by html/docx/pptx renderers.
     priority: p.priority || 0,
     effort: p.effort || "",
     impact: p.impact || "",
@@ -137,10 +151,10 @@ function extractComparisonData(competeArtefact) {
   // These may be in the artefact's top level or in a dedicated comparison object
   const result = {};
 
-  if (competeArtefact.company_a) result.companyA = competeArtefact.company_a;
-  if (competeArtefact.company_b) result.companyB = competeArtefact.company_b;
-  if (competeArtefact.companyA) result.companyA = competeArtefact.companyA;
-  if (competeArtefact.companyB) result.companyB = competeArtefact.companyB;
+  // Accept both snake_case (artefact convention) and camelCase.
+  // snake_case is preferred — camelCase only fills in if snake_case is absent.
+  result.companyA = competeArtefact.company_a || competeArtefact.companyA || "";
+  result.companyB = competeArtefact.company_b || competeArtefact.companyB || "";
 
   // Comparison matrix — may be at top level or in synthesis.
   // Accepts two formats:
@@ -284,7 +298,7 @@ function extractMsGaps(artefact) {
     gap: g.description || "",
     applies: g.section || "",
     section: g.scope || "",
-    priority: g.severity === "significant" ? "High" : g.severity === "moderate" ? "Medium" : "Low",
+    priority: normalisePriority(g.severity || g.priority),
     detail: g.description || "",
     claim_ids: g.claim_ids || [],
   }));
@@ -707,4 +721,7 @@ module.exports = {
   extractMsPagesAnalysed,
   extractMsDocumentsAccessed,
   buildMsMethodology,
+
+  // Utilities
+  normalisePriority,
 };

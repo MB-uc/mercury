@@ -115,8 +115,8 @@ SITEMAP_DATA = {
 
 
 @unittest.skipUnless(node_available(), "Node.js not available")
-class TestD3LoadOrder(unittest.TestCase):
-    """Bug 1: D3 script must load before the sitemap section."""
+class TestSitemapSection(unittest.TestCase):
+    """Sitemap section renders as HTML directory tree (D3 treemap was removed in commit 7075f63)."""
 
     def setUp(self):
         self.html = generate_html_with_sitemap(SITEMAP_DATA)
@@ -124,29 +124,22 @@ class TestD3LoadOrder(unittest.TestCase):
     def test_sitemap_section_present(self):
         self.assertIn('<section id="sitemap"', self.html)
 
-    def test_d3_script_present(self):
-        self.assertIn('d3.min.js', self.html)
+    def test_no_d3_dependency(self):
+        """D3 was removed — the sitemap must not depend on d3.min.js."""
+        self.assertNotIn('d3.min.js', self.html,
+            "D3 was replaced by an HTML directory tree in commit 7075f63 — d3.min.js must not be present")
 
-    def test_d3_loads_before_sitemap_section(self):
-        d3_pos = self.html.find('d3.min.js')
-        sitemap_pos = self.html.find('<section id="sitemap"')
-        self.assertGreater(sitemap_pos, 0, "sitemap section not found")
-        self.assertGreater(d3_pos, 0, "d3.min.js not found")
-        self.assertLess(d3_pos, sitemap_pos,
-            f"D3 (pos {d3_pos}) must appear before sitemap section (pos {sitemap_pos})")
-
-    def test_d3_in_head(self):
-        """D3 script tag must be inside <head>, not after </main>."""
-        head_end = self.html.find('</head>')
-        d3_pos = self.html.find('d3.min.js')
-        self.assertGreater(head_end, 0, "</head> not found")
-        self.assertLess(d3_pos, head_end,
-            "D3 script should be in <head>, not after </main>")
-
-    def test_treemap_uses_domcontentloaded(self):
-        """Treemap IIFE must be wrapped in DOMContentLoaded."""
-        self.assertIn('DOMContentLoaded', self.html,
-            "Treemap script must use DOMContentLoaded to wait for D3")
+    def test_sitemap_tree_structure_rendered(self):
+        """Sitemap section should contain the HTML directory tree markup."""
+        sitemap_start = self.html.find('<section id="sitemap"')
+        sitemap_end = self.html.find('</section>', sitemap_start)
+        self.assertGreater(sitemap_start, 0, "sitemap section not found")
+        section_html = self.html[sitemap_start:sitemap_end]
+        # The directory tree uses a nested list or div structure; check root node is present
+        self.assertTrue(
+            'About Us' in section_html or 'What We Do' in section_html,
+            "Sitemap tree should render node labels from sitemap_data"
+        )
 
 
 @unittest.skipUnless(node_available(), "Node.js not available")

@@ -280,19 +280,18 @@ function renderTreeNode(node, depth) {
   const hasChildren = Array.isArray(node.children) && node.children.length > 0;
   const icon = hasChildren ? "📁" : "📄";
 
-  let html = `<li class="tree-item depth-${depth}">`;
-  html += `<span class="tree-icon">${icon}</span>${nameEl}${descEl}`;
+  const parts = [`<li class="tree-item depth-${depth}">`, `<span class="tree-icon">${icon}</span>${nameEl}${descEl}`];
 
   if (hasChildren) {
-    html += `<ul class="tree-children">`;
+    parts.push(`<ul class="tree-children">`);
     for (const child of node.children) {
-      html += renderTreeNode(child, depth + 1);
+      parts.push(renderTreeNode(child, depth + 1));
     }
-    html += `</ul>`;
+    parts.push(`</ul>`);
   }
 
-  html += `</li>`;
-  return html;
+  parts.push(`</li>`);
+  return parts.join("");
 }
 
 function renderSiteTree(data) {

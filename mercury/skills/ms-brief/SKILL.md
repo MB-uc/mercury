@@ -50,45 +50,46 @@ Run three queries:
 
 **Query 1 — Company scores**
 ```sql
-SELECT company_name, domain, iq_score, sector, index_name, audit_date
-FROM `mercury.iq_scores`
+SELECT company, overall, company_narrative, content_mix, channel_mix,
+       optimization, reach, about_us, ir, media, csr, careers,
+       reputational_resilience, index_name, dataset_year
+FROM sector_intelligence.iq_benchmarks
 WHERE LOWER(domain) = LOWER('{domain}')
-   OR LOWER(company_name) LIKE LOWER('%{company}%')
-ORDER BY audit_date DESC
+   OR LOWER(company) LIKE LOWER('%{company}%')
 LIMIT 5
 ```
 
 **Query 2 — Index statistics**
 ```sql
-SELECT index_name, sector,
-  ROUND(AVG(iq_score), 1) AS median_score,
-  ROUND(PERCENTILE_CONT(iq_score, 0.75) OVER (PARTITION BY index_name), 1) AS p75_score,
+SELECT
+  AVG(overall) AS mean_score,
+  APPROX_QUANTILES(overall, 4)[OFFSET(2)] AS median_score,
+  APPROX_QUANTILES(overall, 4)[OFFSET(3)] AS p75_score,
   COUNT(*) AS company_count
-FROM `mercury.iq_scores`
+FROM sector_intelligence.iq_benchmarks
 WHERE index_name = '{index_from_query_1}'
-GROUP BY index_name, sector
 ```
 
 **Query 3 — Rank within index**
 ```sql
-SELECT company_name, iq_score,
-  RANK() OVER (PARTITION BY index_name ORDER BY iq_score DESC) AS rank,
-  COUNT(*) OVER (PARTITION BY index_name) AS total
-FROM `mercury.iq_scores`
+SELECT company, overall,
+  RANK() OVER (ORDER BY overall DESC) AS rank,
+  COUNT(*) OVER () AS total
+FROM sector_intelligence.iq_benchmarks
 WHERE index_name = '{index_from_query_1}'
-ORDER BY iq_score DESC
+ORDER BY overall DESC
 ```
 
 Record in the evidence manifest as `benchmark`:
 ```json
 {
-  "iq_score": 0,
+  "overall": 0,
   "index_name": "",
   "sector_median": 0,
   "sector_p75": 0,
   "rank": 0,
   "total_in_index": 0,
-  "audit_date": ""
+  "dataset_year": ""
 }
 ```
 
@@ -341,10 +342,9 @@ If a peer site blocks the crawl, record all feature matrix entries as `not_asses
 Where Connect.IQ benchmark data is available for peers, pull it to supplement the feature matrix:
 
 ```sql
-SELECT company_name, overall_iq, ir_iq, sustainability_iq,
-       careers_iq, media_iq, about_iq
-FROM `mercury.iq_scores`
-WHERE LOWER(company_name) IN ([peer names lower-cased])
+SELECT company, overall, ir, csr, careers, media, about_us
+FROM sector_intelligence.iq_benchmarks
+WHERE LOWER(company) IN ([peer names lower-cased])
 AND dataset_year = 2024
 ```
 

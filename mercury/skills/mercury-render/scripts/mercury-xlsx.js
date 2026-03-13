@@ -88,12 +88,11 @@ function priorityColour(priority) {
   return C.LOW_GREEN;
 }
 
+// Import normalisePriority from adapter to avoid duplicating enum logic
+const { normalisePriority } = require('./mercury-adapter');
+
 function severityLabel(severity) {
-  if (!severity) return 'Medium';
-  const s = String(severity).toLowerCase();
-  if (s === 'significant' || s === 'high') return 'High';
-  if (s === 'moderate' || s === 'medium') return 'Medium';
-  return 'Low';
+  return normalisePriority(severity);
 }
 
 // ============================================================
@@ -417,9 +416,10 @@ function buildPagesSheet(wb, data) {
 
   const ws = wb.addWorksheet('Pages analysed');
 
-  // Determine whether rows are arrays or objects
-  const sample = data.pagesAnalysed[0];
-  const isArray = Array.isArray(sample);
+  // Determine whether rows are arrays or objects.
+  // Guard: find first non-null entry to detect shape, or default to array format.
+  const sample = data.pagesAnalysed.find(r => r != null);
+  const isArray = sample == null || Array.isArray(sample);
 
   if (isArray) {
     ws.columns = [{ width: 60 }, { width: 20 }, { width: 30 }];

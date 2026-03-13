@@ -1491,8 +1491,13 @@ are merged into a single appendix, deduplicated by source URL.
 
 ## BigQuery data source
 
-Mercury accesses IDX benchmark data via the BigQuery MCP server (`mcp__bigquery__query`).
-All queries are read-only. The data lives in the `sector_intelligence` dataset.
+Mercury accesses IDX benchmark data via BigQuery. All queries are read-only. The data lives in the `sector_intelligence` dataset.
+
+**Tool name by environment:**
+- **Cowork (Toolbox MCP):** use `run_query` — this is the standard tool name in the Toolbox environment
+- **Local MCP (claude_desktop_config.json):** use `mcp__bigquery__query`
+
+Check your capability manifest at the start of each stage to confirm which tool is available. The queries are identical regardless of which tool executes them.
 
 ### Tables
 

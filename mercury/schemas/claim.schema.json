@@ -60,7 +60,7 @@
     },
     "method": {
       "type": "string",
-      "enum": ["web_fetch", "web_search", "benchmark_snapshot", "prior_stage_artefact", "manual_override"],
+      "enum": ["web_fetch", "web_search", "benchmark_snapshot", "bigquery", "prior_stage_artefact", "manual_override"],
       "description": "How the evidence was collected."
     },
     "evidence_ids": {

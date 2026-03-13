@@ -81,10 +81,12 @@ No other certainty values may appear. The claim builder must reject any claim wi
 |-------|---------|
 | `web_fetch` | Page content retrieved directly |
 | `web_search` | Found via search query |
-| `bigquery` | From BigQuery IQ benchmark data |
-| `benchmark_estimation` | Estimated from observable criteria (BigQuery unavailable) |
+| `benchmark_snapshot` | From BigQuery IQ benchmark data |
+| `bigquery` | Direct BigQuery query result (non-benchmark) |
 | `prior_stage_artefact` | Carried forward from earlier stage claim |
 | `manual_override` | Analyst override with justification |
+
+> Note: `benchmark_estimation` (estimated scores when BigQuery is unavailable) is not a claim method — use `benchmark_snapshot` with `certainty: inferred` and note the estimation in the claim statement.
 
 ---
 
@@ -121,7 +123,7 @@ For each evidence item:
   2. Validate required fields (claim_id, entity, domain, stage, statement, claim_type, scope, certainty, method, created_at)
   3. Validate certainty ∈ {confirmed, observed, inferred, not_assessed}
   4. Validate claim_type ∈ {fact, inference, gap, recommendation_support, judgement_support}
-  5. Validate method ∈ {web_fetch, web_search, bigquery, benchmark_estimation, prior_stage_artefact, manual_override}
+  5. Validate method ∈ {web_fetch, web_search, benchmark_snapshot, bigquery, prior_stage_artefact, manual_override}
   6. Validate evidence linkage (evidence_ids required unless method = prior_stage_artefact)
   7. Run scope inflation check (Rule 2)
   8. Run negative claim boundary check (Rule 3)

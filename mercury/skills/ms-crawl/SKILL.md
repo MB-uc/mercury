@@ -5,7 +5,7 @@ description: "Mercury Strategy collection stage 2 — four-source site discovery
 
 # ms-crawl — Mercury Strategy site discovery stage
 
-Collection stage 2 of 3. Executes the four-source crawl methodology defined in `references/CRAWL_CONFIG.md`, classifies all discovered URLs using `references/CLASSIFICATION_RULES.md`, scrapes a representative page sample, runs negative verification for all concepts in `references/NEGATIVE_VERIFICATION_CONCEPTS.md`, and outputs a structured evidence manifest and a D3-compatible site structure file.
+Collection stage 2 of 3. Executes the four-source crawl methodology defined in `references/CRAWL_CONFIG.md`, classifies all discovered URLs using `references/CLASSIFICATION_RULES.md`, scrapes a representative page sample, runs negative verification for all concepts in `references/NEGATIVE_VERIFICATION_CONCEPTS.md`, and outputs a structured evidence manifest and an HTML directory tree site structure file.
 
 ---
 
@@ -293,7 +293,7 @@ Record the classified section inventory in the evidence manifest. For each secti
 }
 ```
 
-### Site structure file — D3-compatible tree
+### Site structure file — hierarchical tree
 
 Build a nested tree representing the site's confirmed structure. Save as `{company}-ms-crawl-structure.json`.
 
@@ -357,7 +357,7 @@ Include sub-pages as children where they were discovered and scraped. Leaf nodes
 Save both files on completion:
 
 1. `{company}-ms-crawl-manifest.json` — complete evidence manifest (structure below)
-2. `{company}-ms-crawl-structure.json` — D3-compatible site tree
+2. `{company}-ms-crawl-structure.json` — hierarchical site tree
 
 **Evidence manifest structure:**
 ```json
