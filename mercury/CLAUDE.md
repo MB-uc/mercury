@@ -35,7 +35,7 @@ This plugin provides five skills:
 - **Key features:** Firecrawl agent news sweep, 130-item document checklist, material events detection, site map via firecrawl_map
 
 ### ms-crawl (Mercury Strategy — site discovery)
-- **Skill file:** `skills/ms-crawl/SKILL.md` — five-pass structured website crawl
+- **Skill file:** `skills/ms-crawl/SKILL.md` — four-source structured website crawl
 - **Pipeline position:** Stage 2 of Mercury Strategy. Produces page evidence files, crawl manifest, and D3-treemap-compatible site structure
 - **Key features:** Collection-only (no evaluation), escalation protocol (web_fetch → firecrawl_scrape → firecrawl_browser), credit budgeting
 

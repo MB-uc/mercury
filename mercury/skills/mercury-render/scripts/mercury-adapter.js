@@ -304,19 +304,49 @@ function extractMsImplications(artefact) {
 }
 
 /**
- * Extract pages analysed from ms-findings evidence_loaded
+ * Extract pages analysed from ms-findings section_inventory (per-page URLs).
+ * Falls back to a summary row from evidence_loaded if section_inventory is absent.
+ * Returns array of [url, section_label, presence_quality] rows.
  */
 function extractMsPagesAnalysed(artefact) {
-  // ms-findings doesn't have citations in the same format
-  // Build from evidence_loaded metadata if available
+  // Primary: pull individual scraped pages from section_inventory
+  const inventory = artefact.section_inventory;
+  if (inventory && typeof inventory === "object") {
+    const rows = [];
+    for (const section of Object.values(inventory)) {
+      const scraped = section.scraped_pages || [];
+      for (const page of scraped) {
+        if (page.url) {
+          const label = page.playbook_page_type || page.section_key || section.section_key || "";
+          const quality = page.presence_quality || "";
+          rows.push([page.url, label, quality]);
+        }
+      }
+    }
+    if (rows.length > 0) return rows;
+  }
+  // Fallback: summary row from evidence_loaded
   const loaded = artefact.evidence_loaded || {};
   const pages = loaded.pages_loaded || 0;
   const docs = loaded.documents_loaded || 0;
-  // Return a summary row rather than per-page detail
   if (pages > 0 || docs > 0) {
-    return [[`${pages} pages, ${docs} documents`, "crawl evidence", "loaded from ms-crawl"]];
+    return [[`${pages} pages loaded from ms-crawl`, "crawl evidence", `${docs} documents`]];
   }
   return [];
+}
+
+/**
+ * Extract documents accessed from ms-findings document_checklist items.
+ * Returns array of [url, document_type, status] for present/present_partial items.
+ */
+function extractMsDocumentsAccessed(artefact) {
+  const checklist = artefact.document_checklist;
+  if (!checklist) return [];
+  const items = checklist.items || checklist;
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter(item => item.url && (item.status === "present" || item.status === "present_partial"))
+    .map(item => [item.url, item.document || "", item.status]);
 }
 
 /**
@@ -393,6 +423,7 @@ function buildReportData(stages, opts = {}) {
     benchmarks: null,
     overallAssessment: null,
     sitemapData: null,
+    documentsAnalysed: [],
 
     // Compete stage fields
     companyA: "",
@@ -545,6 +576,12 @@ function buildReportData(stages, opts = {}) {
     const msPages = extractMsPagesAnalysed(msf);
     reportData.pagesAnalysed = reportData.pagesAnalysed.concat(msPages);
 
+    // Documents accessed
+    const msDocs = extractMsDocumentsAccessed(msf);
+    if (msDocs.length > 0) {
+      reportData.documentsAnalysed = (reportData.documentsAnalysed || []).concat(msDocs);
+    }
+
     // Methodology
     if (!reportData.methodology) {
       reportData.methodology = buildMsMethodology(msf);
@@ -668,5 +705,6 @@ module.exports = {
   extractMsGaps,
   extractMsImplications,
   extractMsPagesAnalysed,
+  extractMsDocumentsAccessed,
   buildMsMethodology,
 };

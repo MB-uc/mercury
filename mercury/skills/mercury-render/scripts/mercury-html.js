@@ -336,19 +336,56 @@ function renderSiteTree(data) {
   </section>`;
 }
 
+function isUrl(str) {
+  return typeof str === "string" && /^https?:\/\//i.test(str.trim());
+}
+
+function renderUrlCell(value) {
+  const str = String(value);
+  if (isUrl(str)) {
+    const display = str.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "");
+    return `<td><a class="tree-link" href="${escapeHtml(str)}" target="_blank" rel="noopener">${escapeHtml(display)}</a></td>`;
+  }
+  return `<td>${escapeHtml(str)}</td>`;
+}
+
 function renderPagesAnalysed(data) {
   if (!data.pagesAnalysed || data.pagesAnalysed.length === 0) return "";
 
   const rows = data.pagesAnalysed.map(row => {
-    const cells = row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("");
-    return `<tr>${cells}</tr>`;
+    const [url, ...rest] = row;
+    const urlCell = renderUrlCell(url);
+    const restCells = rest.map(cell => `<td>${escapeHtml(String(cell))}</td>`).join("");
+    return `<tr>${urlCell}${restCells}</tr>`;
   }).join("\n");
 
   return `
   <section id="pages-analysed" class="content-section fade-in">
-    <h2>Pages analysed</h2>
+    <h2>Pages accessed</h2>
+    <p class="section-meta">${data.pagesAnalysed.length} page${data.pagesAnalysed.length !== 1 ? "s" : ""}</p>
     <table class="data-table">
-      <thead><tr><th>URL</th><th>Type</th><th>Claims</th></tr></thead>
+      <thead><tr><th>URL</th><th>Page type</th><th>Presence quality</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </section>`;
+}
+
+function renderDocumentsAnalysed(data) {
+  if (!data.documentsAnalysed || data.documentsAnalysed.length === 0) return "";
+
+  const rows = data.documentsAnalysed.map(row => {
+    const [url, ...rest] = row;
+    const urlCell = renderUrlCell(url);
+    const restCells = rest.map(cell => `<td>${escapeHtml(String(cell))}</td>`).join("");
+    return `<tr>${urlCell}${restCells}</tr>`;
+  }).join("\n");
+
+  return `
+  <section id="documents-accessed" class="content-section fade-in">
+    <h2>Documents accessed</h2>
+    <p class="section-meta">${data.documentsAnalysed.length} document${data.documentsAnalysed.length !== 1 ? "s" : ""}</p>
+    <table class="data-table">
+      <thead><tr><th>URL</th><th>Document type</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </section>`;
@@ -387,14 +424,20 @@ function renderDocuments(data) {
     const filesHtml = group.files.map(f => {
       const icon = formatIcons[f.format] || `<span class="doc-icon">${escapeHtml(f.format)}</span>`;
       const time = f.rendered_at ? new Date(f.rendered_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
+      let href = "";
+      if (f.path) {
+        href = f.path.startsWith("/") ? `file://${f.path}` : f.path;
+      }
+      const linkOpen = href ? `<a class="doc-file" href="${escapeHtml(href)}" target="_blank" rel="noopener">` : `<div class="doc-file">`;
+      const linkClose = href ? `</a>` : `</div>`;
       return `
-        <div class="doc-file">
+        ${linkOpen}
           ${icon}
           <div class="doc-file-info">
             <span class="doc-filename">${escapeHtml(f.filename)}</span>
             <span class="doc-time">${escapeHtml(time)}</span>
           </div>
-        </div>`;
+        ${linkClose}`;
     }).join("");
 
     groupsHtml += `
@@ -433,7 +476,8 @@ function buildNav(data) {
   if (data.benchmarks) sections.push({ id: "benchmarks", label: "Benchmarks" });
   if (data.talkingPoints && data.talkingPoints.length) sections.push({ id: "talking-points", label: "Talking points" });
   if (data.sitemapData) sections.push({ id: "sitemap", label: "Site architecture" });
-  if (data.pagesAnalysed && data.pagesAnalysed.length) sections.push({ id: "pages-analysed", label: "Pages analysed" });
+  if (data.pagesAnalysed && data.pagesAnalysed.length) sections.push({ id: "pages-analysed", label: "Pages accessed" });
+  if (data.documentsAnalysed && data.documentsAnalysed.length) sections.push({ id: "documents-accessed", label: "Documents accessed" });
   if (data.methodology) sections.push({ id: "methodology", label: "Methodology" });
   if (data.documentsTab) sections.push({ id: "documents", label: "Documents" });
 
@@ -485,6 +529,7 @@ function buildPresentation(data) {
   const talkingPoints = renderTalkingPoints(data);
   const siteTree = renderSiteTree(data);
   const pagesAnalysed = renderPagesAnalysed(data);
+  const documentsAnalysed = renderDocumentsAnalysed(data);
   const methodology = renderMethodology(data);
   const documents = renderDocuments(data);
 
@@ -663,6 +708,7 @@ main { margin-left: 0; margin-top: 52px; }
   display: flex; align-items: center; gap: 0.75rem;
   padding: 0.5rem 0.75rem; border-radius: 4px;
   transition: background 0.2s;
+  text-decoration: none; color: inherit; cursor: pointer;
 }
 .doc-file:hover { background: rgba(255,255,255,0.06); }
 .doc-icon {
@@ -715,6 +761,7 @@ ${benchmarks}
 ${talkingPoints}
 ${siteTree}
 ${pagesAnalysed}
+${documentsAnalysed}
 ${methodology}
 ${documents}
 </main>
@@ -769,6 +816,7 @@ module.exports = {
   renderPeerComparison,
   renderSiteTree,
   renderPagesAnalysed,
+  renderDocumentsAnalysed,
   renderMethodology,
   renderDocuments,
   buildNav,

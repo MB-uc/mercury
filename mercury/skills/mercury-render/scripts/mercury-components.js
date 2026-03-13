@@ -17,7 +17,7 @@ const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   Header, Footer, AlignmentType, LevelFormat,
   HeadingLevel, BorderStyle, WidthType, ShadingType,
-  PageNumber, PageBreak, ImageRun
+  PageNumber, PageBreak, ImageRun, ExternalHyperlink
 } = require("docx");
 
 // ============================================================
@@ -441,5 +441,5 @@ module.exports = {
   // Re-exports from docx
   HeadingLevel, AlignmentType, PageBreak, TextRun, Paragraph,
   Table, TableRow, TableCell, WidthType, ShadingType, BorderStyle,
-  PageNumber, ImageRun,
+  PageNumber, ImageRun, ExternalHyperlink,
 };

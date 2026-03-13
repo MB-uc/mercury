@@ -220,10 +220,73 @@ async function renderDOCX(reportData, outputPath) {
     children.push(M.spacer(200));
   }
 
-  // Pages analysed
+  // Pages accessed — URLs rendered as hyperlinks
   if (reportData.pagesAnalysed && reportData.pagesAnalysed.length > 0) {
-    children.push(M.heading1("Pages analysed"));
-    children.push(M.dataTable(["URL", "Type", "Claims"], reportData.pagesAnalysed, [4500, 2000, 2526]));
+    children.push(M.heading1("Pages accessed"));
+    const pageColWidths = [4500, 2263, 2263];
+    children.push(new M.Table({
+      width: { size: 9026, type: M.WidthType.DXA },
+      columnWidths: pageColWidths,
+      rows: [
+        new M.TableRow({
+          children: ["URL", "Page type", "Presence quality"].map((h, i) => M.hCell(h, pageColWidths[i])),
+        }),
+        ...reportData.pagesAnalysed.map((row, ri) => {
+          const fill = ri % 2 === 0 ? M.COLORS.MERCURY_GRAY : M.COLORS.WHITE;
+          const [url, pageType, quality] = row;
+          const urlStr = String(url || "");
+          const isUrl = /^https?:\/\//i.test(urlStr);
+          const urlChild = isUrl
+            ? new M.ExternalHyperlink({
+                link: urlStr,
+                children: [new M.TextRun({ text: urlStr, style: "Hyperlink", font: M.FONT_PRIMARY, size: 18 })],
+              })
+            : new M.TextRun({ text: urlStr, font: M.FONT_PRIMARY, size: 18 });
+          return new M.TableRow({
+            children: [
+              new M.TableCell({ borders: M.BORDERS, width: { size: pageColWidths[0], type: M.WidthType.DXA }, shading: { fill, type: M.ShadingType.CLEAR }, margins: M.CELL_MARGINS, children: [new M.Paragraph({ children: [urlChild], spacing: { before: 40, after: 40 } })] }),
+              M.cell([M.t(String(pageType || ""), { size: 18 })], { width: pageColWidths[1], fill }),
+              M.cell([M.t(String(quality || ""), { size: 18 })], { width: pageColWidths[2], fill }),
+            ],
+          });
+        }),
+      ],
+    }));
+    children.push(M.spacer(200));
+  }
+
+  // Documents accessed — URLs rendered as hyperlinks
+  if (reportData.documentsAnalysed && reportData.documentsAnalysed.length > 0) {
+    children.push(M.heading1("Documents accessed"));
+    const docColWidths = [4500, 2763, 1763];
+    children.push(new M.Table({
+      width: { size: 9026, type: M.WidthType.DXA },
+      columnWidths: docColWidths,
+      rows: [
+        new M.TableRow({
+          children: ["URL", "Document type", "Status"].map((h, i) => M.hCell(h, docColWidths[i])),
+        }),
+        ...reportData.documentsAnalysed.map((row, ri) => {
+          const fill = ri % 2 === 0 ? M.COLORS.MERCURY_GRAY : M.COLORS.WHITE;
+          const [url, docType, status] = row;
+          const urlStr = String(url || "");
+          const isUrl = /^https?:\/\//i.test(urlStr);
+          const urlChild = isUrl
+            ? new M.ExternalHyperlink({
+                link: urlStr,
+                children: [new M.TextRun({ text: urlStr, style: "Hyperlink", font: M.FONT_PRIMARY, size: 18 })],
+              })
+            : new M.TextRun({ text: urlStr, font: M.FONT_PRIMARY, size: 18 });
+          return new M.TableRow({
+            children: [
+              new M.TableCell({ borders: M.BORDERS, width: { size: docColWidths[0], type: M.WidthType.DXA }, shading: { fill, type: M.ShadingType.CLEAR }, margins: M.CELL_MARGINS, children: [new M.Paragraph({ children: [urlChild], spacing: { before: 40, after: 40 } })] }),
+              M.cell([M.t(String(docType || ""), { size: 18 })], { width: docColWidths[1], fill }),
+              M.cell([M.t(String(status || ""), { size: 18 })], { width: docColWidths[2], fill }),
+            ],
+          });
+        }),
+      ],
+    }));
     children.push(M.spacer(200));
   }
 
@@ -324,14 +387,25 @@ async function renderPPTX(reportData, outputPath) {
     }
   }
 
-  // Pages analysed
+  // Pages accessed
   if (reportData.pagesAnalysed && reportData.pagesAnalysed.length > 0) {
-    MP.sectionSlide(pptx, "Pages analysed");
+    MP.sectionSlide(pptx, "Pages accessed");
     const batchSize = 10;
     for (let i = 0; i < reportData.pagesAnalysed.length; i += batchSize) {
       const batch = reportData.pagesAnalysed.slice(i, i + batchSize);
-      MP.tableSlide(pptx, `Pages analysed (${i + 1}–${Math.min(i + batchSize, reportData.pagesAnalysed.length)})`,
-        ["URL", "Type", "Claims"], batch, { colW: [6, 2, 4] });
+      MP.tableSlide(pptx, `Pages accessed (${i + 1}–${Math.min(i + batchSize, reportData.pagesAnalysed.length)})`,
+        ["URL", "Page type", "Presence quality"], batch, { colW: [6.5, 2.5, 3.13] });
+    }
+  }
+
+  // Documents accessed
+  if (reportData.documentsAnalysed && reportData.documentsAnalysed.length > 0) {
+    MP.sectionSlide(pptx, "Documents accessed");
+    const batchSize = 10;
+    for (let i = 0; i < reportData.documentsAnalysed.length; i += batchSize) {
+      const batch = reportData.documentsAnalysed.slice(i, i + batchSize);
+      MP.tableSlide(pptx, `Documents accessed (${i + 1}–${Math.min(i + batchSize, reportData.documentsAnalysed.length)})`,
+        ["URL", "Document type", "Status"], batch, { colW: [6.5, 3.63, 2] });
     }
   }
 

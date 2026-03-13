@@ -5,6 +5,9 @@
       "headers": {
         "Authorization": "Bearer fc-33b4852ecfa947c4b6559fe2258f446a"
       }
+    },
+    "bigquery": {
+      "url": "https://toolbox-56285826751.us-central1.run.app/mcp"
     }
   }
 }
