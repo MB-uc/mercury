@@ -256,7 +256,7 @@ These colours have been verified for sufficient contrast on both Licorice (dark)
 ### HTML presentation
 
 - All IDX fonts are embedded as base64 `@font-face` — no external font loading needed.
-- D3.js is loaded from CDN for treemap visualisation (the only external dependency).
+- No external JavaScript dependencies — site structure renders as a native HTML directory tree.
 - CSS custom properties map to the IDX colour tokens for easy theming.
 - Print stylesheet optimises for PDF export from the browser.
 - Scroll-triggered animations use `IntersectionObserver` (no library dependency).

@@ -1,0 +1,2 @@
+FROM us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest
+COPY tools.yaml /app/tools.yaml

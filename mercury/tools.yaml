@@ -1,0 +1,49 @@
+kind: sources
+name: idx-bigquery
+type: "bigquery"
+project: "diageo-rep-247"
+location: "US"
+writeMode: "allowed"
+maxQueryResultRows: 100
+
+---
+
+kind: tools
+name: run_query
+type: bigquery-execute-sql
+source: idx-bigquery
+description: Execute a SQL query against BigQuery (SELECT, INSERT, UPDATE, DELETE)
+
+---
+
+kind: tools
+name: list_datasets
+type: bigquery-list-dataset-ids
+source: idx-bigquery
+description: List all dataset IDs in the BigQuery project
+
+---
+
+kind: tools
+name: list_tables
+type: bigquery-list-table-ids
+source: idx-bigquery
+description: List all table IDs in a BigQuery dataset
+
+---
+
+kind: tools
+name: get_table_info
+type: bigquery-get-table-info
+source: idx-bigquery
+description: Get schema and metadata for a BigQuery table
+
+---
+
+kind: toolsets
+name: mercury_bq
+tools:
+  - run_query
+  - list_datasets
+  - list_tables
+  - get_table_info

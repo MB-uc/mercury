@@ -179,7 +179,7 @@ async function renderDOCX(reportData, outputPath) {
 
   // Gaps
   if (reportData.gaps && reportData.gaps.length > 0) {
-    children.push(M.heading1("Gaps versus best practice"));
+    children.push(M.heading1(reportData.isMsFindings ? "Gaps identified" : "Gaps versus best practice"));
     children.push(M.gapsTable(reportData.gaps));
     children.push(M.spacer(200));
   }
@@ -351,8 +351,9 @@ async function renderPPTX(reportData, outputPath) {
 
   // Gaps
   if (reportData.gaps && reportData.gaps.length > 0) {
-    MP.sectionSlide(pptx, "Gaps versus best practice");
-    MP.gapsSlide(pptx, "Gaps versus best practice", reportData.gaps);
+    const gapsHeading = reportData.isMsFindings ? "Gaps identified" : "Gaps versus best practice";
+    MP.sectionSlide(pptx, gapsHeading);
+    MP.gapsSlide(pptx, gapsHeading, reportData.gaps);
   }
 
   // Benchmarks

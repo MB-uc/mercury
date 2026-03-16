@@ -119,6 +119,7 @@
           "reasoning": { "type": "string" },
           "evidence_basis": { "type": "array", "items": { "type": "string" } },
           "severity": { "type": "string" },
+          "polarity": { "type": "string", "enum": ["positive", "negative", "mixed"] },
           "section": { "type": "string" }
         }
       }

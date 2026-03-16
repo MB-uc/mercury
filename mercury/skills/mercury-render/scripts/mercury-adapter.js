@@ -106,10 +106,24 @@ function buildMethodology(artefact) {
   const limitations = (artefact.limitations || []);
   let text = `Mercury v6 automated audit. Capabilities used: ${caps}. Claims: ${claimCount}. Generated: ${generated}.`;
   if (limitations.length > 0) {
-    text += "\n\nLimitations:\n" + limitations.map(l => `- ${l}`).join("\n");
+    text += "\n\nLimitations:\n" + limitations.map(l => {
+      if (typeof l === "string") return `- ${l}`;
+      return `- ${l.description || l.detail || l.text || l.reason || JSON.stringify(l)}`;
+    }).join("\n");
   }
   return text;
 }
+
+// Human-readable stage labels for cover page metadata
+const STAGE_LABELS = {
+  brief: "Briefing",
+  compete: "Competitive landscape",
+  sitemap: "Sitemap recommendation",
+  meeting: "Meeting pack",
+  ms_brief: "Strategy brief",
+  ms_crawl: "Site crawl",
+  ms_findings: "Strategy findings",
+};
 
 /**
  * Determine report type from the stages provided
@@ -283,6 +297,7 @@ function extractMsFindings(artefact) {
     title: f.theme || "",
     detail: f.implication || "",
     severity: f.severity || "moderate",
+    polarity: f.polarity || null, // "positive"|"negative"|"mixed" — null means unclassified
     classification: f.classification || "INFERENCE",
     finding_id: f.finding_id || "",
     audience_impact: f.audience_impact || [],
@@ -374,7 +389,10 @@ function buildMsMethodology(artefact) {
   const limitations = artefact.limitations || [];
   let text = `Mercury Strategy pipeline. Evidence: ${loaded.pages_loaded || 0} pages, ${loaded.documents_loaded || 0} documents. Claims: ${claimCount}. Findings: ${findingCount}. Gaps: ${gapCount}.`;
   if (limitations.length > 0) {
-    text += "\n\nLimitations:\n" + limitations.map(l => typeof l === "string" ? `- ${l}` : `- ${l.description || l}`).join("\n");
+    text += "\n\nLimitations:\n" + limitations.map(l => {
+      if (typeof l === "string") return `- ${l}`;
+      return `- ${l.description || l.detail || l.text || l.reason || JSON.stringify(l)}`;
+    }).join("\n");
   }
   return text;
 }
@@ -416,7 +434,7 @@ function buildReportData(stages, opts = {}) {
     meta: [
       ["Sector", opts.sector || ""],
       ["Index", opts.index || ""],
-      ["Stages", stagesCompleted.join(", ")],
+      ["Stages", stagesCompleted.map(k => STAGE_LABELS[k] || k).join(", ")],
       ["Pages analysed", `${totalPages} key pages`],
     ].filter(([, v]) => v), // Remove empty values
 
@@ -553,18 +571,11 @@ function buildReportData(stages, opts = {}) {
       }
     }
 
-    // Split findings into strengths (positive signals) and issues
+    // Split findings into strengths and issues using the polarity field.
+    // ms-findings artefacts should include polarity: "positive"|"negative"|"mixed"
+    // on each finding. If absent, treat all as issues (safer than keyword guessing).
     const allFindings = extractMsFindings(msf);
-    // Findings that don't identify a gap pattern are treated as strengths
-    // This is a heuristic — ms-findings doesn't have severity="positive"
-    // We use the finding classification and content to determine
-    const msStrengths = allFindings.filter(f =>
-      f.detail.toLowerCase().includes("strong") ||
-      f.detail.toLowerCase().includes("effective") ||
-      f.detail.toLowerCase().includes("comprehensive") ||
-      f.severity === "minor"
-    );
-    const msIssues = allFindings.filter(f => !msStrengths.includes(f));
+    const msStrengths = allFindings.filter(f => f.polarity === "positive");
 
     if (msStrengths.length > 0) {
       reportData.strengths = reportData.strengths.concat(msStrengths.map(s => ({
@@ -586,8 +597,11 @@ function buildReportData(stages, opts = {}) {
       reportData.talkingPoints = reportData.talkingPoints.concat(msTPs);
     }
 
-    // Pages analysed
-    const msPages = extractMsPagesAnalysed(msf);
+    // Pages analysed — prefer section_inventory from ms_crawl manifest if available
+    const pagesSource = (stages.ms_crawl && stages.ms_crawl.section_inventory)
+      ? Object.assign({}, msf, { section_inventory: stages.ms_crawl.section_inventory })
+      : msf;
+    const msPages = extractMsPagesAnalysed(pagesSource);
     reportData.pagesAnalysed = reportData.pagesAnalysed.concat(msPages);
 
     // Documents accessed
@@ -608,6 +622,9 @@ function buildReportData(stages, opts = {}) {
     if (msf.site_structure) {
       reportData.sitemapData = msf.site_structure;
     }
+
+    // Flag so renderers can adjust headings (e.g. avoid "best practice")
+    reportData.isMsFindings = true;
   }
 
   // Deduplicate claims by claim_id (keep claims without an id)
@@ -639,7 +656,7 @@ const path = require("path");
  */
 function loadArtefacts(dir, company) {
   const slug = company.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
-  const stageNames = ["brief", "compete", "sitemap", "meeting", "ms_findings"];
+  const stageNames = ["brief", "compete", "sitemap", "meeting", "ms_findings", "ms_crawl"];
   const stages = {};
 
   for (const stage of stageNames) {
@@ -657,6 +674,15 @@ function loadArtefacts(dir, company) {
         `${slug}-ms-findings-artefact.json`,
         `${company}-ms-findings-artefact.json`,
         `ms-findings-artefact.json`,
+      );
+    }
+
+    // For ms_crawl, also check ms-crawl-manifest naming patterns
+    if (stage === "ms_crawl") {
+      patterns.push(
+        `${slug}-ms-crawl-manifest.json`,
+        `${company}-ms-crawl-manifest.json`,
+        `ms-crawl-manifest.json`,
       );
     }
 

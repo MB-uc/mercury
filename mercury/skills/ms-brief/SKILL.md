@@ -30,7 +30,7 @@ Establish and record the following. All fields are required before proceeding.
 | Stock ticker and exchange | IR landing page, Bloomberg, LSE/NYSE |
 | Listing status | Listed / private / recently listed / delisted |
 | Sector and sub-sector | Company description, SIC code |
-| Headquarters | About or contact page |
+| Headquarters | About or contact page — **verify against a second source** (e.g. Companies House, Bloomberg, annual report) before recording. HQ is the most trust-sensitive field; an error here undermines the entire brief. |
 | Primary domain | Confirmed live URL |
 | Subdomains (if any) | Note any careers / IR / sustainability subdomains |
 | Geographic scope | Global / regional / single-market |
@@ -106,6 +106,8 @@ Record in the evidence manifest:
 ```
 
 Do not attempt to estimate a score. Do not search for alternative benchmark sources at this stage.
+
+**Fallback context:** When a company is not in the dataset, query general index statistics (median, P25, P75) for the company's listing index (e.g. FTSE 100, FTSE 250) and record them in `benchmark.index_context`. This gives the consultant sector framing even without a company-specific score.
 
 ---
 

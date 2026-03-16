@@ -192,7 +192,7 @@ function renderGaps(data) {
 
   return `
   <section id="gaps" class="content-section">
-    <h2>Gaps versus best practice</h2>
+    <h2>${data.isMsFindings ? "Gaps identified" : "Gaps versus best practice"}</h2>
     <table class="data-table">
       <thead><tr><th>#</th><th>Gap</th><th>Priority</th><th>Section</th></tr></thead>
       <tbody>${tableRows}</tbody>

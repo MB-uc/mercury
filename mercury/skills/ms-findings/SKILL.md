@@ -257,6 +257,7 @@ Each finding in the artefact:
   "finding_id": "F-001",
   "theme": "",
   "severity": "significant | moderate | minor",
+  "polarity": "positive | negative | mixed",
   "classification": "INFERENCE",
   "implication": "",
   "audience_impact": ["Institutional investors — Tier 1.1", "Sell-side analysts — Tier 1.4"],
@@ -315,6 +316,8 @@ Distil the High-confidence archetype findings into strategic implications for `s
 ```
 
 Maximum five implications, ordered by evidence strength (most criteria met first). Where two co-occurring archetypes produced a systemic finding, merge their implications into one.
+
+**Word count gate:** Before finalising, count words in each implication subsection. If any exceeds 250 words, tighten the prose — cut qualifiers, merge overlapping sentences, remove restatements. Also verify the executive summary is 80–120 words. These are hard limits, not guidelines.
 
 ---
 
@@ -377,6 +380,7 @@ Before producing any output, run the self-check from `references/FINDINGS_TEMPLA
 - [ ] Every finding names a specific audience
 - [ ] Every finding uses benchmark framing, not best-practice framing
 - [ ] Every finding is traceable to the evidence manifest
+- [ ] Sections 1–5 do not contain the word "Recommendation" as a heading or prefix — describe consequences and implications only. Prescriptive language belongs in consultant notes (Section 6) or appendices.
 
 **Archetype check**
 - [ ] Only High-confidence archetypes appear in Section 3
@@ -394,6 +398,12 @@ Before producing any output, run the self-check from `references/FINDINGS_TEMPLA
 - [ ] Maximum 4 capability signals
 - [ ] No recommendation language — consequence framing only
 - [ ] AEO/AI sequencing: C09 before C13 where applicable
+
+**Word count check**
+- [ ] Executive summary: 80–120 words (hard limit)
+- [ ] Each implication subsection: 150–250 words (hard limit)
+- [ ] Each audience paragraph: 80–120 words
+- [ ] Each commercial signal paragraph: 60–100 words
 
 **Output constraints check**
 - [ ] British English throughout
