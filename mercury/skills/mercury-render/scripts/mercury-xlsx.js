@@ -27,7 +27,7 @@ const C = {
   AQUAMARINE:   'FF00FFC9',
   LEMON_LIME:   'FFEEFF00',
   BLUE:         'FF0068FF',
-  ORANGE:       'FF6500FF',  // corrected: FF prefix + hex
+  ORANGE:       'FFFF6500',
   GREEN:        'FF00FF00',
   WHITE:        'FFFFFFFF',
   MEDIUM:       'FF999999',

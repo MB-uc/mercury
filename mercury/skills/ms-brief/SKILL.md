@@ -54,8 +54,7 @@ SELECT company, overall, company_narrative, content_mix, channel_mix,
        optimization, reach, about_us, ir, media, csr, careers,
        reputational_resilience, index_name, dataset_year
 FROM sector_intelligence.iq_benchmarks
-WHERE LOWER(domain) = LOWER('{domain}')
-   OR LOWER(company) LIKE LOWER('%{company}%')
+WHERE LOWER(company) LIKE LOWER('%{company}%')
 LIMIT 5
 ```
 
