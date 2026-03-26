@@ -469,6 +469,7 @@ function buildNav(data) {
     { id: "executive-summary", label: "Executive summary" },
   ];
 
+  if (data.documentsTab) sections.push({ id: "documents", label: "Documents" });
   if (data.strengths && data.strengths.length) sections.push({ id: "strengths", label: "Strengths" });
   if (data.comparisonMatrix && data.comparisonMatrix.length) sections.push({ id: "peer-comparison", label: "Comparison" });
   if (data.gaps && data.gaps.length) sections.push({ id: "gaps", label: "Gaps" });
@@ -478,7 +479,6 @@ function buildNav(data) {
   if (data.pagesAnalysed && data.pagesAnalysed.length) sections.push({ id: "pages-analysed", label: "Pages accessed" });
   if (data.documentsAnalysed && data.documentsAnalysed.length) sections.push({ id: "documents-accessed", label: "Documents accessed" });
   if (data.methodology) sections.push({ id: "methodology", label: "Methodology" });
-  if (data.documentsTab) sections.push({ id: "documents", label: "Documents" });
 
   const links = sections.map(s => `<a href="#${s.id}" class="nav-link" data-section="${s.id}">${escapeHtml(s.label)}</a>`).join("\n");
   const logoImg = logo ? `<img src="${logo}" alt="IDX" class="nav-logo">` : "";
@@ -753,6 +753,7 @@ ${nav}
 <main>
 ${hero}
 ${execSummary}
+${documents}
 ${strengths}
 ${peerComparison}
 ${gaps}
@@ -762,7 +763,6 @@ ${siteTree}
 ${pagesAnalysed}
 ${documentsAnalysed}
 ${methodology}
-${documents}
 </main>
 
 <script>
