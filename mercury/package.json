@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "docx": "^9.6.1",
     "exceljs": "^4.4.0",
     "pptxgenjs": "^4.0.1"

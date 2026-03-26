@@ -625,6 +625,35 @@ function buildReportData(stages, opts = {}) {
 
     // Flag so renderers can adjust headings (e.g. avoid "best practice")
     reportData.isMsFindings = true;
+
+    // ---- MS-FINDINGS EXTENDED DATA (for comprehensive Word report) ----
+
+    // Company context (identity, sector, benchmark, material events)
+    reportData.companyContext = msf.company_context || null;
+
+    // Archetype results (A01–A13 with confidence, criteria met/not met)
+    reportData.archetypeResults = msf.archetype_results || [];
+
+    // Audience assessment (tier classifications: served/underserved/absent)
+    reportData.audienceAssessment = msf.audience_assessment || [];
+
+    // Peer calibration (feature matrix comparison, archetype framing)
+    reportData.peerCalibration = msf.peer_calibration || null;
+
+    // All findings (not split into strengths/issues — full detail)
+    reportData.allFindings = allFindings;
+
+    // Synthesis block (executive summary + implications)
+    reportData.synthesis = msf.synthesis || null;
+
+    // Appendix data
+    reportData.appendix = msf.appendix || null;
+
+    // Limitations
+    reportData.limitations = msf.limitations || [];
+
+    // Evidence loaded counts
+    reportData.evidenceLoaded = msf.evidence_loaded || null;
   }
 
   // Deduplicate claims by claim_id (keep claims without an id)

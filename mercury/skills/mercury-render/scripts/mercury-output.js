@@ -121,8 +121,453 @@ function renderHTML(reportData, outputPath) {
 
 /**
  * Render DOCX from reportData.
+ * When isMsFindings is true, produces the comprehensive Mercury Strategy report.
+ * Otherwise produces the original pipeline report format.
  */
 async function renderDOCX(reportData, outputPath) {
+  if (reportData.isMsFindings) {
+    return renderMsStrategyDOCX(reportData, outputPath);
+  }
+  return renderOriginalDOCX(reportData, outputPath);
+}
+
+/**
+ * Build a URL table section (pages or documents) for Word output.
+ * @param {string} title - Section heading
+ * @param {Array} rows - Array of [url, col2, col3] tuples
+ * @param {string[]} headers - Column headers
+ * @returns {Array} Array of docx elements
+ */
+function buildUrlTable(title, rows, headers) {
+  if (!rows || rows.length === 0) return [];
+  const elements = [];
+  elements.push(M.heading2(title));
+  const colWidths = [4500, 2263, 2263];
+  elements.push(new M.Table({
+    width: { size: 9026, type: M.WidthType.DXA },
+    columnWidths: colWidths,
+    rows: [
+      new M.TableRow({
+        children: headers.map((h, i) => M.hCell(h, colWidths[i])),
+      }),
+      ...rows.map((row, ri) => {
+        const fill = ri % 2 === 0 ? M.COLORS.MERCURY_GRAY : M.COLORS.WHITE;
+        const [url, col2, col3] = row;
+        const urlStr = String(url || "");
+        const isUrl = /^https?:\/\//i.test(urlStr);
+        const urlChild = isUrl
+          ? new M.ExternalHyperlink({
+              link: urlStr,
+              children: [new M.TextRun({ text: urlStr, style: "Hyperlink", font: M.FONT_PRIMARY, size: 18 })],
+            })
+          : new M.TextRun({ text: urlStr, font: M.FONT_PRIMARY, size: 18 });
+        return new M.TableRow({
+          children: [
+            new M.TableCell({ borders: M.BORDERS, width: { size: colWidths[0], type: M.WidthType.DXA }, shading: { fill, type: M.ShadingType.CLEAR }, margins: M.CELL_MARGINS, children: [new M.Paragraph({ children: [urlChild], spacing: { before: 40, after: 40 } })] }),
+            M.cell([M.t(String(col2 || ""), { size: 18 })], { width: colWidths[1], fill }),
+            M.cell([M.t(String(col3 || ""), { size: 18 })], { width: colWidths[2], fill }),
+          ],
+        });
+      }),
+    ],
+  }));
+  elements.push(M.spacer(200));
+  return elements;
+}
+
+// ============================================================
+// MERCURY STRATEGY COMPREHENSIVE WORD REPORT
+// ============================================================
+
+async function renderMsStrategyDOCX(reportData, outputPath) {
+  const sections = [];
+
+  // ---- COVER PAGE ----
+  sections.push(M.coverPage(
+    "Mercury Strategy",
+    reportData.subtitle,
+    reportData.meta,
+    { thirdLine: reportData.thirdLine }
+  ));
+
+  // ---- MAIN CONTENT SECTION ----
+  const content = M.contentSection("Mercury Strategy", `${reportData.subtitle} | Mercury Strategy`);
+  const children = [];
+
+  // ============================================================
+  // 1. EXECUTIVE SUMMARY
+  // ============================================================
+  if (reportData.executiveSummary) {
+    children.push(M.heading1("Executive summary"));
+    children.push(M.bodyText(reportData.executiveSummary));
+    children.push(M.spacer(400));
+  }
+
+  // ============================================================
+  // 2. COMPANY CONTEXT
+  // ============================================================
+  const ctx = reportData.companyContext;
+  if (ctx) {
+    children.push(M.heading1("Company context"));
+
+    // Identity table
+    const identityRows = [];
+    if (ctx.company_type) identityRows.push(["Company type", ctx.company_type]);
+    if (ctx.sector) identityRows.push(["Sector", ctx.sector]);
+    if (ctx.listing_status) identityRows.push(["Listing status", ctx.listing_status]);
+    if (ctx.coverage_confidence) identityRows.push(["Coverage confidence", ctx.coverage_confidence]);
+    if (ctx.benchmark && ctx.benchmark.iq_score != null) {
+      identityRows.push(["Connect.IQ score", String(ctx.benchmark.iq_score)]);
+    }
+    if (ctx.benchmark && ctx.benchmark.index_name) {
+      identityRows.push(["Index", ctx.benchmark.index_name]);
+    }
+    if (ctx.benchmark && ctx.benchmark.rank) {
+      identityRows.push(["Rank", ctx.benchmark.rank]);
+    }
+    if (identityRows.length > 0) {
+      children.push(M.dataTable(["Attribute", "Value"], identityRows, [3500, 5526]));
+      children.push(M.spacer(200));
+    }
+
+    // Material events
+    const events = ctx.material_events || [];
+    if (events.length > 0) {
+      children.push(M.heading2("Material events"));
+      events.forEach(evt => {
+        const text = typeof evt === "string" ? evt : (evt.description || evt.event || JSON.stringify(evt));
+        children.push(M.bodyText(`- ${text}`));
+      });
+      children.push(M.spacer(200));
+    }
+  }
+
+  // ============================================================
+  // 3. BENCHMARK POSITION
+  // ============================================================
+  if (reportData.benchmarks && reportData.benchmarks.rows) {
+    children.push(M.heading1("Connect.IQ benchmark position"));
+    const bHeaders = reportData.benchmarks.headers || ["Category", "Score", "Index median", "Index P75", "Assessment"];
+    const bWidths = bHeaders.map(() => Math.floor(9026 / bHeaders.length));
+    children.push(M.dataTable(bHeaders, reportData.benchmarks.rows, bWidths));
+    children.push(M.spacer(200));
+  }
+
+  // ============================================================
+  // 4. STRATEGIC FINDINGS
+  // ============================================================
+  const findings = reportData.allFindings || [];
+  if (findings.length > 0) {
+    children.push(M.heading1("Strategic findings"));
+
+    // Summary table first
+    const findingSummaryRows = findings.map(f => [
+      f.title || "",
+      f.severity || "",
+      f.polarity || "unclassified",
+      (f.audience_impact || []).join(", ") || "-",
+    ]);
+    children.push(M.dataTable(
+      ["Finding", "Severity", "Signal", "Audience impact"],
+      findingSummaryRows,
+      [3200, 1200, 1400, 3226]
+    ));
+    children.push(M.spacer(300));
+
+    // Detailed findings
+    findings.forEach((f, i) => {
+      const severityTag = f.severity ? ` [${f.severity}]` : "";
+      children.push(M.heading2(`${i + 1}. ${f.title}${severityTag}`));
+      if (f.detail) children.push(M.bodyText(f.detail));
+      if (f.audience_impact && f.audience_impact.length > 0) {
+        children.push(M.bodyText(`Audience impact: ${f.audience_impact.join(", ")}`));
+      }
+      children.push(M.spacer(150));
+    });
+    children.push(M.spacer(200));
+  }
+
+  // ============================================================
+  // 5. ARCHETYPE ASSESSMENT
+  // ============================================================
+  const archetypes = reportData.archetypeResults || [];
+  if (archetypes.length > 0) {
+    children.push(M.heading1("Archetype assessment"));
+
+    // Show only High and Medium archetypes in main body
+    const significantArchetypes = archetypes.filter(a =>
+      a.confidence === "high" || a.confidence === "High" ||
+      a.confidence === "medium" || a.confidence === "Medium"
+    );
+    const otherArchetypes = archetypes.filter(a =>
+      a.confidence !== "high" && a.confidence !== "High" &&
+      a.confidence !== "medium" && a.confidence !== "Medium"
+    );
+
+    if (significantArchetypes.length > 0) {
+      const archRows = significantArchetypes.map(a => [
+        a.archetype_name || a.archetype_id || "",
+        (a.confidence || "").charAt(0).toUpperCase() + (a.confidence || "").slice(1),
+        (a.criteria_met || []).length + " met",
+        (a.criteria_not_met || []).length + " not met",
+      ]);
+      children.push(M.dataTable(
+        ["Archetype", "Confidence", "Criteria met", "Criteria not met"],
+        archRows,
+        [3500, 1500, 1500, 2526]
+      ));
+      children.push(M.spacer(200));
+
+      // Detail for each High-confidence archetype
+      significantArchetypes
+        .filter(a => a.confidence === "high" || a.confidence === "High")
+        .forEach(a => {
+          children.push(M.heading2(a.archetype_name || a.archetype_id));
+          if (a.evidence_notes) children.push(M.bodyText(a.evidence_notes));
+          if (a.criteria_met && a.criteria_met.length > 0) {
+            children.push(M.bodyText(`Criteria met: ${a.criteria_met.join(", ")}`));
+          }
+          children.push(M.spacer(100));
+        });
+    }
+
+    if (otherArchetypes.length > 0) {
+      children.push(M.bodyText(
+        `${otherArchetypes.length} additional archetype${otherArchetypes.length > 1 ? "s" : ""} assessed at Low or None confidence (see Appendix A).`
+      ));
+      children.push(M.spacer(200));
+    }
+  }
+
+  // ============================================================
+  // 6. AUDIENCE ANALYSIS
+  // ============================================================
+  const audience = reportData.audienceAssessment || [];
+  if (audience.length > 0) {
+    children.push(M.heading1("Audience analysis"));
+
+    const audienceRows = audience.map(a => [
+      a.tier || a.audience || "",
+      a.classification || a.status || "",
+      a.evidence_notes || a.notes || a.detail || "",
+    ]);
+    children.push(M.dataTable(
+      ["Audience tier", "Classification", "Evidence"],
+      audienceRows,
+      [2500, 1526, 5000]
+    ));
+    children.push(M.spacer(200));
+
+    // Detail for underserved and absent tiers
+    audience
+      .filter(a => {
+        const cls = (a.classification || a.status || "").toLowerCase();
+        return cls === "underserved" || cls === "absent";
+      })
+      .forEach(a => {
+        const tierName = a.tier || a.audience || "";
+        const cls = a.classification || a.status || "";
+        children.push(M.heading2(`${tierName} [${cls}]`));
+        if (a.evidence_notes || a.notes || a.detail) {
+          children.push(M.bodyText(a.evidence_notes || a.notes || a.detail));
+        }
+        if (a.failure_signals && a.failure_signals.length > 0) {
+          children.push(M.bodyText(`Failure signals: ${a.failure_signals.join(", ")}`));
+        }
+        children.push(M.spacer(100));
+      });
+    children.push(M.spacer(200));
+  }
+
+  // ============================================================
+  // 7. GAPS IDENTIFIED
+  // ============================================================
+  if (reportData.gaps && reportData.gaps.length > 0) {
+    children.push(M.heading1("Gaps identified"));
+    children.push(M.gapsTable(reportData.gaps));
+    children.push(M.spacer(200));
+  }
+
+  // ============================================================
+  // 8. SITE STRUCTURE
+  // ============================================================
+  // Note: site structure renders in HTML (treemap). For Word, summarise sections.
+  const evidenceLoaded = reportData.evidenceLoaded;
+  if (evidenceLoaded) {
+    children.push(M.heading1("Site overview"));
+    const siteRows = [];
+    if (evidenceLoaded.pages_loaded) siteRows.push(["Pages loaded", String(evidenceLoaded.pages_loaded)]);
+    if (evidenceLoaded.documents_loaded) siteRows.push(["Documents loaded", String(evidenceLoaded.documents_loaded)]);
+    if (evidenceLoaded.sections_assessed) {
+      const secs = Array.isArray(evidenceLoaded.sections_assessed) ? evidenceLoaded.sections_assessed : [];
+      if (secs.length > 0) siteRows.push(["Sections assessed", secs.join(", ")]);
+    }
+    if (siteRows.length > 0) {
+      children.push(M.dataTable(["Metric", "Value"], siteRows, [3500, 5526]));
+      children.push(M.spacer(200));
+    }
+  }
+
+  // ============================================================
+  // 9. STRATEGIC IMPLICATIONS (PRIORITIES)
+  // ============================================================
+  if (reportData.talkingPoints && reportData.talkingPoints.length > 0) {
+    children.push(M.heading1("Strategic implications"));
+    reportData.talkingPoints.forEach((tp, i) => {
+      children.push(M.heading2(`${i + 1}. ${tp.title}`));
+      if (tp.detail) children.push(M.bodyText(tp.detail));
+      children.push(M.spacer(100));
+    });
+    children.push(M.spacer(200));
+  }
+
+  // ============================================================
+  // 10. PEER CALIBRATION
+  // ============================================================
+  const peer = reportData.peerCalibration;
+  if (peer) {
+    children.push(M.heading1("Peer calibration"));
+    if (peer.summary) children.push(M.bodyText(peer.summary));
+    if (peer.baseline_expectations && peer.baseline_expectations.length > 0) {
+      children.push(M.heading2("Baseline expectations"));
+      peer.baseline_expectations.forEach(b => {
+        const text = typeof b === "string" ? b : (b.feature || b.description || JSON.stringify(b));
+        children.push(M.bodyText(`- ${text}`));
+      });
+    }
+    if (peer.leading_features && peer.leading_features.length > 0) {
+      children.push(M.heading2("Where the company leads"));
+      peer.leading_features.forEach(f => {
+        const text = typeof f === "string" ? f : (f.feature || f.description || JSON.stringify(f));
+        children.push(M.bodyText(`- ${text}`));
+      });
+    }
+    if (peer.sector_gaps && peer.sector_gaps.length > 0) {
+      children.push(M.heading2("Sector-wide gaps"));
+      peer.sector_gaps.forEach(g => {
+        const text = typeof g === "string" ? g : (g.feature || g.description || JSON.stringify(g));
+        children.push(M.bodyText(`- ${text}`));
+      });
+    }
+    children.push(M.spacer(200));
+  }
+
+  // ============================================================
+  // APPENDIX A — ARCHETYPE EVIDENCE TABLES
+  // ============================================================
+  const appendix = reportData.appendix;
+  const hasAppendixA = (appendix && appendix.archetype_evidence_tables && appendix.archetype_evidence_tables.length > 0)
+    || archetypes.length > 0;
+  if (hasAppendixA) {
+    children.push(M.heading1("Appendix A — Archetype evidence"));
+    // Full archetype table (all 13)
+    if (archetypes.length > 0) {
+      const fullArchRows = archetypes.map(a => [
+        a.archetype_id || "",
+        a.archetype_name || "",
+        (a.confidence || "").charAt(0).toUpperCase() + (a.confidence || "").slice(1),
+        String((a.criteria_met || []).length),
+        String((a.criteria_not_met || []).length),
+        String((a.criteria_not_assessable || []).length),
+      ]);
+      children.push(M.dataTable(
+        ["ID", "Archetype", "Confidence", "Met", "Not met", "N/A"],
+        fullArchRows,
+        [600, 3000, 1200, 800, 1000, 800]
+      ));
+      children.push(M.spacer(200));
+    }
+    // Detailed evidence tables from appendix
+    if (appendix && appendix.archetype_evidence_tables) {
+      appendix.archetype_evidence_tables.forEach(table => {
+        const name = table.archetype_name || table.archetype_id || "";
+        children.push(M.heading2(name));
+        if (table.observations && table.observations.length > 0) {
+          const obsRows = table.observations.map(o => [
+            o.criterion || "",
+            o.observation || o.evidence || "",
+            o.met ? "Met" : "Not met",
+          ]);
+          children.push(M.dataTable(
+            ["Criterion", "Observation", "Status"],
+            obsRows,
+            [1500, 5526, 2000]
+          ));
+        }
+        children.push(M.spacer(100));
+      });
+    }
+    children.push(M.spacer(200));
+  }
+
+  // ============================================================
+  // APPENDIX B — PAGES ACCESSED
+  // ============================================================
+  children.push(...buildUrlTable(
+    "Appendix B — Pages accessed",
+    reportData.pagesAnalysed,
+    ["URL", "Page type", "Presence quality"]
+  ));
+
+  // ============================================================
+  // APPENDIX C — DOCUMENTS ACCESSED
+  // ============================================================
+  children.push(...buildUrlTable(
+    "Appendix C — Documents accessed",
+    reportData.documentsAnalysed,
+    ["URL", "Document type", "Status"]
+  ));
+
+  // ============================================================
+  // APPENDIX D — CLAIM REGISTER
+  // ============================================================
+  if (reportData.claims && reportData.claims.length > 0) {
+    children.push(M.heading1("Appendix D — Claim register"));
+    const claimRows = reportData.claims.map(c => [
+      c.claim_id || "",
+      c.statement || "",
+      c.certainty || "",
+      c.scope || "",
+    ]);
+    children.push(M.dataTable(
+      ["Claim ID", "Statement", "Certainty", "Scope"],
+      claimRows,
+      [1000, 4526, 1500, 2000]
+    ));
+    children.push(M.spacer(200));
+  }
+
+  // ============================================================
+  // APPENDIX E — METHODOLOGY & LIMITATIONS
+  // ============================================================
+  if (reportData.methodology || (reportData.limitations && reportData.limitations.length > 0)) {
+    children.push(M.heading1("Appendix E — Methodology and limitations"));
+    if (reportData.methodology) {
+      children.push(M.bodyText(reportData.methodology));
+      children.push(M.spacer(200));
+    }
+    if (reportData.limitations && reportData.limitations.length > 0) {
+      children.push(M.heading2("Limitations"));
+      reportData.limitations.forEach(l => {
+        const text = typeof l === "string" ? l : (l.description || l.detail || l.text || l.reason || JSON.stringify(l));
+        children.push(M.bodyText(`- ${text}`));
+      });
+    }
+  }
+
+  content.children = children;
+  sections.push(content);
+
+  const doc = M.createDocument(sections);
+  await M.build(doc, outputPath);
+  return outputPath;
+}
+
+// ============================================================
+// ORIGINAL PIPELINE WORD REPORT
+// ============================================================
+
+async function renderOriginalDOCX(reportData, outputPath) {
   const sections = [];
 
   // Cover page
@@ -179,7 +624,7 @@ async function renderDOCX(reportData, outputPath) {
 
   // Gaps
   if (reportData.gaps && reportData.gaps.length > 0) {
-    children.push(M.heading1(reportData.isMsFindings ? "Gaps identified" : "Gaps versus best practice"));
+    children.push(M.heading1("Gaps versus best practice"));
     children.push(M.gapsTable(reportData.gaps));
     children.push(M.spacer(200));
   }
@@ -220,75 +665,19 @@ async function renderDOCX(reportData, outputPath) {
     children.push(M.spacer(200));
   }
 
-  // Pages accessed — URLs rendered as hyperlinks
-  if (reportData.pagesAnalysed && reportData.pagesAnalysed.length > 0) {
-    children.push(M.heading1("Pages accessed"));
-    const pageColWidths = [4500, 2263, 2263];
-    children.push(new M.Table({
-      width: { size: 9026, type: M.WidthType.DXA },
-      columnWidths: pageColWidths,
-      rows: [
-        new M.TableRow({
-          children: ["URL", "Page type", "Presence quality"].map((h, i) => M.hCell(h, pageColWidths[i])),
-        }),
-        ...reportData.pagesAnalysed.map((row, ri) => {
-          const fill = ri % 2 === 0 ? M.COLORS.MERCURY_GRAY : M.COLORS.WHITE;
-          const [url, pageType, quality] = row;
-          const urlStr = String(url || "");
-          const isUrl = /^https?:\/\//i.test(urlStr);
-          const urlChild = isUrl
-            ? new M.ExternalHyperlink({
-                link: urlStr,
-                children: [new M.TextRun({ text: urlStr, style: "Hyperlink", font: M.FONT_PRIMARY, size: 18 })],
-              })
-            : new M.TextRun({ text: urlStr, font: M.FONT_PRIMARY, size: 18 });
-          return new M.TableRow({
-            children: [
-              new M.TableCell({ borders: M.BORDERS, width: { size: pageColWidths[0], type: M.WidthType.DXA }, shading: { fill, type: M.ShadingType.CLEAR }, margins: M.CELL_MARGINS, children: [new M.Paragraph({ children: [urlChild], spacing: { before: 40, after: 40 } })] }),
-              M.cell([M.t(String(pageType || ""), { size: 18 })], { width: pageColWidths[1], fill }),
-              M.cell([M.t(String(quality || ""), { size: 18 })], { width: pageColWidths[2], fill }),
-            ],
-          });
-        }),
-      ],
-    }));
-    children.push(M.spacer(200));
-  }
+  // Pages accessed
+  children.push(...buildUrlTable(
+    "Pages accessed",
+    reportData.pagesAnalysed,
+    ["URL", "Page type", "Presence quality"]
+  ));
 
-  // Documents accessed — URLs rendered as hyperlinks
-  if (reportData.documentsAnalysed && reportData.documentsAnalysed.length > 0) {
-    children.push(M.heading1("Documents accessed"));
-    const docColWidths = [4500, 2763, 1763];
-    children.push(new M.Table({
-      width: { size: 9026, type: M.WidthType.DXA },
-      columnWidths: docColWidths,
-      rows: [
-        new M.TableRow({
-          children: ["URL", "Document type", "Status"].map((h, i) => M.hCell(h, docColWidths[i])),
-        }),
-        ...reportData.documentsAnalysed.map((row, ri) => {
-          const fill = ri % 2 === 0 ? M.COLORS.MERCURY_GRAY : M.COLORS.WHITE;
-          const [url, docType, status] = row;
-          const urlStr = String(url || "");
-          const isUrl = /^https?:\/\//i.test(urlStr);
-          const urlChild = isUrl
-            ? new M.ExternalHyperlink({
-                link: urlStr,
-                children: [new M.TextRun({ text: urlStr, style: "Hyperlink", font: M.FONT_PRIMARY, size: 18 })],
-              })
-            : new M.TextRun({ text: urlStr, font: M.FONT_PRIMARY, size: 18 });
-          return new M.TableRow({
-            children: [
-              new M.TableCell({ borders: M.BORDERS, width: { size: docColWidths[0], type: M.WidthType.DXA }, shading: { fill, type: M.ShadingType.CLEAR }, margins: M.CELL_MARGINS, children: [new M.Paragraph({ children: [urlChild], spacing: { before: 40, after: 40 } })] }),
-              M.cell([M.t(String(docType || ""), { size: 18 })], { width: docColWidths[1], fill }),
-              M.cell([M.t(String(status || ""), { size: 18 })], { width: docColWidths[2], fill }),
-            ],
-          });
-        }),
-      ],
-    }));
-    children.push(M.spacer(200));
-  }
+  // Documents accessed
+  children.push(...buildUrlTable(
+    "Documents accessed",
+    reportData.documentsAnalysed,
+    ["URL", "Document type", "Status"]
+  ));
 
   // Methodology
   if (reportData.methodology) {
