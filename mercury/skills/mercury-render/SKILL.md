@@ -200,7 +200,33 @@ When building prose from a finding, look up its `claim_ids` and apply this guard
 
 #### Word document (.docx)
 
-The component library at `scripts/mercury-components.js` provides all the building blocks. Use it like this:
+The renderer automatically selects the correct Word format based on the data:
+
+- **Mercury Strategy** (`reportData.isMsFindings === true`) — routes to `renderMsStrategyDOCX()`. Produces 10 main sections + 5 appendices. See `references/report-structures.md` under "Mercury Strategy" for the full section order and data sources.
+- **Original pipeline** — routes to `renderOriginalDOCX()`. Produces the standard quick audit / peer comparison / deep dive format.
+
+Both paths are in `scripts/mercury-output.js`. The adapter (`scripts/mercury-adapter.js`) builds `reportData` from the artefact files and sets `isMsFindings = true` when ms-findings data is present.
+
+**Mercury Strategy Word report sections:**
+
+1. Cover page
+2. Executive summary
+3. Company context (identity + material events)
+4. Connect.IQ benchmark position
+5. Strategic findings (summary table + detail per finding)
+6. Archetype assessment (High/Medium in body, Low/None in appendix)
+7. Audience analysis (Underserved/Absent in body, Served in appendix)
+8. Gaps identified
+9. Site overview
+10. Strategic implications
+11. Peer calibration
+- Appendix A: Archetype evidence tables
+- Appendix B: Pages accessed
+- Appendix C: Documents accessed
+- Appendix D: Claim register
+- Appendix E: Methodology and limitations
+
+The component library at `scripts/mercury-components.js` provides all the building blocks:
 
 ```javascript
 const M = require('./scripts/mercury-components.js');
@@ -212,21 +238,6 @@ const M = require('./scripts/mercury-components.js');
 // - Section builders: M.coverPage(title, subtitle, meta), M.headerFooter(left, right)
 // - Document builder: M.createDocument(sections)
 // - Build: M.build(doc, outputPath)
-
-const sections = [
-  M.coverPage("Site audit", "Inchcape plc", reportData.meta),
-  {
-    ...M.contentSection("Inchcape plc | Mercury site audit"),
-    children: [
-      M.heading1("Executive summary"),
-      M.bodyText(reportData.executiveSummary),
-      // ... build content using M helpers
-    ]
-  }
-];
-
-const doc = M.createDocument(sections);
-await M.build(doc, "output.docx");
 ```
 
 The component library handles all Mercury branding automatically — colours, fonts, table styles, page sizing, headers, footers. You focus on content structure, not styling.

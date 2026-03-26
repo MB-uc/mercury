@@ -78,7 +78,46 @@ A side-by-side evaluation of two competing companies. Typically 8-10 pages.
 
 ---
 
-## Deep dive
+## Mercury Strategy
+
+Comprehensive strategic assessment from the three-stage ms-brief/ms-crawl/ms-findings pipeline. Typically 20-30 pages. Triggered when `reportData.isMsFindings === true`.
+
+The Word renderer automatically routes to `renderMsStrategyDOCX()` when ms-findings data is present. The adapter passes through extended data: `companyContext`, `archetypeResults`, `audienceAssessment`, `peerCalibration`, `allFindings`, `synthesis`, `appendix`, `limitations`, `evidenceLoaded`.
+
+### Section order
+
+1. **Cover page** — title: "Mercury Strategy", subtitle: company name, meta: sector, index, stages, pages count, date
+2. **Executive summary** — 80-120 word synthesis from `synthesis.executive_summary`
+3. **Company context** — Identity table (company type, sector, listing status, IQ score, index, rank) from `companyContext`. Material events listed below the table.
+4. **Connect.IQ benchmark position** — Score table vs index median and P75 from `benchmarks`
+5. **Strategic findings** — Summary table first (finding, severity, signal, audience impact), then H2 per finding with full implication text and audience impact. Source: `allFindings` array.
+6. **Archetype assessment** — High and Medium confidence archetypes in a summary table (name, confidence, criteria met/not met). H2 detail block for each High-confidence archetype with evidence notes and criteria. Low/None referenced as "see Appendix A". Source: `archetypeResults`.
+7. **Audience analysis** — Tier classification table (tier, classification, evidence). H2 detail for Underserved and Absent tiers with failure signals. Served tiers omitted from main body. Source: `audienceAssessment`.
+8. **Gaps identified** — Priority-coloured gaps table using `gapsTable()`. Heading: "Gaps identified" (never "best practice"). Source: `gaps`.
+9. **Site overview** — Summary table: pages loaded, documents loaded, sections assessed. Source: `evidenceLoaded`.
+10. **Strategic implications** — Numbered H2 subsections with full narrative detail (150-250 words each, max 5). Source: `talkingPoints` (mapped from `synthesis.implications`).
+11. **Peer calibration** — Summary prose, then three subsections: baseline expectations, where the company leads, sector-wide gaps. Source: `peerCalibration`.
+
+### Appendices
+
+- **Appendix A — Archetype evidence** — Full A01-A13 table (ID, name, confidence, criteria met/not met/N/A). Then per-archetype evidence tables with criterion-level observations. Source: `archetypeResults` + `appendix.archetype_evidence_tables`.
+- **Appendix B — Pages accessed** — URL table (URL, page type, presence quality). Source: `pagesAnalysed`.
+- **Appendix C — Documents accessed** — URL table (URL, document type, status). Source: `documentsAnalysed`.
+- **Appendix D — Claim register** — Full provenance trail (claim ID, statement, certainty, scope). Source: `claims`.
+- **Appendix E — Methodology and limitations** — Process narrative from `methodology`, then bullet list from `limitations`.
+
+### What NOT to include in main body
+
+- Archetype codes (A01, A03 etc.) — internal labels, appendix only
+- Served audience tiers — appendix only
+- Low/None confidence archetypes — appendix only
+- Criterion-level detail — appendix only
+- The word "best practice" — use benchmark framing
+- The word "Recommendation" as a heading — use implications
+
+---
+
+## Deep dive (original pipeline)
 
 Comprehensive section-by-section analysis. Typically 12-20 pages.
 
