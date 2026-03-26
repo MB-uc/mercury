@@ -13,9 +13,9 @@ Collection stage 1 of 3. Produces a structured evidence manifest covering compan
 
 Read this file in full before starting. Then:
 
-1. Confirm the company name and primary domain with the consultant
-2. Confirm the scope: full pipeline (brief → crawl → findings) or brief only
-3. Do not begin collection until scope is confirmed
+1. Use the company name provided in the slash command argument. Look up the primary domain yourself via web search — do not ask the consultant to confirm it unless ambiguous (e.g. multiple companies with the same name, or a recent rebrand/merger).
+2. Assume full pipeline scope unless the consultant says otherwise. Do not ask for scope confirmation — just begin collection immediately.
+3. **Do not open an input dialog or ask a question before starting work.** The consultant has already told you what to do by running the command.
 
 ---
 
@@ -292,20 +292,21 @@ Propose 4–5 sector peers using the three primary filters from `PEER_RESEARCH_G
 
 After applying the primary filters, use the secondary considerations to choose between eligible candidates (direct competitive overlap, acknowledged benchmarks, digital maturity contrast, avoid related parties).
 
-Present the proposed peer set to the consultant **before running any research**:
+Present the proposed peer set to the consultant **before running any research**. The peer table must be the **last thing you output** before stopping — do not append menus, follow-up options, or other text after the table. This ensures the table is visible on screen when the consultant reads it.
 
 ```
 Proposed peer set for [Client]:
 
-| Company | Sector | Index | Market cap | Rationale |
-|---------|--------|-------|------------|-----------|
-| [Name]  | [sector] | [index] | [cap] | [1 sentence] |
+| # | Company | Sector | Index | Market cap | Rationale |
+|---|---------|--------|-------|------------|-----------|
+| 1 | [Name]  | [sector] | [index] | [cap] | [1 sentence] |
+| 2 | [Name]  | [sector] | [index] | [cap] | [1 sentence] |
 ...
 
-Confirm this set to proceed, or suggest replacements.
+Reply "go" to confirm, or suggest replacements.
 ```
 
-**Wait for confirmation.** Do not begin peer research until the peer set is locked.
+**Wait for confirmation.** Do not begin peer research until the peer set is locked. Do not show a choice menu or any other UI element alongside the peer table — the table itself is the prompt.
 
 ---
 
@@ -431,6 +432,48 @@ Manifest structure:
 `evidence_gaps`: record any sections that could not be accessed, pages that returned errors, or data points that could not be confirmed. These are inputs to the ms-findings limitations section.
 
 `consultant_notes`: record any observations that require consultant judgement — ambiguous company structures, recently changed domains, apparent site migrations in progress, etc.
+
+---
+
+## Persist to BigQuery (optional)
+
+After saving the evidence manifest, store the brief results in BigQuery if the `bigquery` connector is available (`mcp__bigquery__run_query` in Cowork). This is a best-effort step — if the tool is unavailable, skip silently.
+
+```sql
+SELECT GENERATE_UUID() AS analysis_id
+```
+
+Then insert:
+
+```sql
+INSERT INTO sector_intelligence.ms_analyses
+  (analysis_id, company, domain, generated_at, analysis_type,
+   executive_summary, coverage_confidence, iq_score, index_name,
+   sector, listing_status, pages_loaded, sections_assessed,
+   evidence_gaps, limitations, loaded_at)
+VALUES (
+  '{analysis_id}',
+  '{company}',
+  '{domain}',
+  CURRENT_TIMESTAMP(),
+  'ms_brief',
+  NULL,
+  NULL,
+  {benchmark.iq_score or NULL},
+  '{benchmark.index_name or NULL}',
+  '{sector or NULL}',
+  '{listing_status}',
+  0,
+  ['{top_level_section_1}', '{top_level_section_2}', ...],
+  ['{evidence_gap_1}', ...],
+  [],
+  CURRENT_TIMESTAMP()
+)
+```
+
+The `analysis_type` is `'ms_brief'`. Fields like `executive_summary` and `coverage_confidence` are NULL — they are populated when ms-findings runs and updates this row. The `artefact_json` column can optionally hold the full manifest JSON.
+
+**Do not block:** If the INSERT fails, proceed to Stage completion.
 
 ---
 

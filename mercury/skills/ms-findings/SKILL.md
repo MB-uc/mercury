@@ -456,57 +456,123 @@ Rendered markdown report following the section order from `references/FINDINGS_T
 
 ## Phase G — Persist to BigQuery
 
-After saving both output files, store the structured results in BigQuery using the appropriate tool for the current environment:
-- **Cowork (Toolbox MCP):** `run_query`
-- **Local MCP:** `mcp__bigquery__query`
+After saving both output files, store the structured results in BigQuery. Use the `bigquery` connector tool (`mcp__bigquery__run_query` in Cowork).
 
 This step is permitted even though Phase A is the only phase that normally makes tool calls — persistence is a post-output operation, not a reasoning step.
 
-**Project qualification:** The INSERT examples below use fully qualified table names (`diageo-rep-247.sector_intelligence.*`). In the Toolbox environment the default project is already configured, so unqualified names (`sector_intelligence.*`) also work. Use whichever form the Toolbox accepts without error.
+**Table qualification:** Use `sector_intelligence.*` (no project prefix). The Toolbox default project is `diageo-rep-247`.
 
-Generate a UUID for `analysis_id` (use `GENERATE_UUID()` in SQL). Execute the following INSERTs in order:
+Generate a shared `analysis_id` first, then use it across all four INSERTs:
 
-### 1. `sector_intelligence.ms_analyses` — one row per analysis
+### Step G1 — Generate analysis_id
 
 ```sql
-INSERT INTO `diageo-rep-247.sector_intelligence.ms_analyses`
-  (analysis_id, company, domain, generated_at, executive_summary,
-   coverage_confidence, iq_score, index_name, sector, listing_status,
-   pages_loaded, sections_assessed, evidence_gaps, limitations, artefact_json)
+SELECT GENERATE_UUID() AS analysis_id
+```
+
+Save the returned value. Use it in all subsequent INSERTs as `'{analysis_id}'`.
+
+### Step G2 — `sector_intelligence.ms_analyses` (one row)
+
+```sql
+INSERT INTO sector_intelligence.ms_analyses
+  (analysis_id, company, domain, generated_at, analysis_type,
+   executive_summary, coverage_confidence, iq_score, index_name,
+   sector, listing_status, pages_loaded, sections_assessed,
+   evidence_gaps, limitations, artefact_json, loaded_at)
 VALUES (
-  GENERATE_UUID(),
+  '{analysis_id}',
   '{company}',
   '{domain}',
-  TIMESTAMP('{generated_at}'),
-  '{synthesis.executive_summary}',
-  '{company_context.coverage_confidence}',
-  {company_context.benchmark.iq_score or NULL},
-  '{company_context.benchmark.index_name}',
-  '{company_context.sector}',
-  '{company_context.listing_status}',
-  {evidence_loaded.pages_loaded},
-  ['{sections_assessed_1}', ...],
-  ['{evidence_gaps_1}', ...],
-  ['{limitations_1}', ...],
-  '{full artefact JSON, escaped}'
+  CURRENT_TIMESTAMP(),
+  'ms_findings',
+  '{executive_summary text, single-quote escaped}',
+  '{coverage_confidence}',
+  {iq_score or NULL},
+  '{index_name or NULL}',
+  '{sector or NULL}',
+  '{listing_status}',
+  {pages_loaded integer},
+  ['{section_1}', '{section_2}', ...],
+  ['{gap_1}', '{gap_2}', ...],
+  ['{limitation_1}', '{limitation_2}', ...],
+  '{full artefact JSON, single-quote escaped}',
+  CURRENT_TIMESTAMP()
 )
 ```
 
-Use the returned `analysis_id` (or use a CTE with `GENERATE_UUID()` aliased) for the child table inserts.
+### Step G3 — `sector_intelligence.ms_findings` (one row per finding)
 
-### 2. `sector_intelligence.ms_findings` — one row per finding
+For each item in the `findings[]` array:
 
-Insert each item from the `findings[]` array.
+```sql
+INSERT INTO sector_intelligence.ms_findings
+  (analysis_id, company, finding_id, theme, severity,
+   classification, implication, audience_impact,
+   archetype_id, archetype_confidence, claim_ids)
+VALUES (
+  '{analysis_id}',
+  '{company}',
+  '{finding.id}',
+  '{finding.theme}',
+  '{finding.severity}',
+  '{finding.classification}',
+  '{finding.implication text, single-quote escaped}',
+  ['{audience_1}', '{audience_2}', ...],
+  '{finding.archetype_id or NULL}',
+  '{finding.archetype_confidence or NULL}',
+  ['{claim_id_1}', '{claim_id_2}', ...]
+)
+```
 
-### 3. `sector_intelligence.ms_gaps` — one row per gap
+Batch multiple findings into a single INSERT with multiple VALUES rows where practical.
 
-Insert each item from the `gaps[]` array.
+### Step G4 — `sector_intelligence.ms_gaps` (one row per gap)
 
-### 4. `sector_intelligence.ms_claims` — one row per claim
+For each item in the `gaps[]` array:
 
-Insert each item from the `claims[]` array.
+```sql
+INSERT INTO sector_intelligence.ms_gaps
+  (analysis_id, company, gap_id, concept, description,
+   section, scope, severity, verified_by,
+   claim_ids, archetype_criteria)
+VALUES (
+  '{analysis_id}',
+  '{company}',
+  '{gap.id}',
+  '{gap.concept}',
+  '{gap.description, single-quote escaped}',
+  '{gap.section}',
+  '{gap.scope}',
+  '{gap.severity}',
+  '{gap.verified_by}',
+  ['{claim_id_1}', ...],
+  ['{archetype_criterion_1}', ...]
+)
+```
 
-**Error handling:** If BigQuery is unavailable or the insert fails, log a warning but do not block the stage. The JSON artefact file is the primary output; BigQuery persistence is supplementary.
+### Step G5 — `sector_intelligence.ms_claims` (one row per claim)
+
+For each item in the `claims[]` array:
+
+```sql
+INSERT INTO sector_intelligence.ms_claims
+  (analysis_id, company, claim_id, statement, claim_type,
+   scope, certainty, evidence_source, archetype_criteria)
+VALUES (
+  '{analysis_id}',
+  '{company}',
+  '{claim.id}',
+  '{claim.statement, single-quote escaped}',
+  '{claim.type}',
+  '{claim.scope}',
+  '{claim.certainty}',
+  '{claim.evidence_source}',
+  ['{criterion_1}', ...]
+)
+```
+
+**Error handling:** If BigQuery is unavailable or any INSERT fails, log a warning but do not block the stage. The JSON artefact file is the primary output; BigQuery persistence is supplementary.
 
 ---
 

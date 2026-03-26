@@ -413,6 +413,60 @@ The crawl never fails silently. Every degradation is recorded in `crawl_summary`
 
 ---
 
+## Persist to BigQuery (optional)
+
+After saving the crawl output files, update the existing `ms_analyses` row if one was created by ms-brief, or create a new one. Use the `bigquery` connector (`mcp__bigquery__run_query` in Cowork). Best-effort — skip silently if unavailable.
+
+**Check for existing row:**
+
+```sql
+SELECT analysis_id FROM sector_intelligence.ms_analyses
+WHERE LOWER(company) = LOWER('{company}')
+  AND analysis_type = 'ms_brief'
+ORDER BY generated_at DESC
+LIMIT 1
+```
+
+**If row exists** — update it with crawl data:
+
+```sql
+UPDATE sector_intelligence.ms_analyses
+SET coverage_confidence = '{coverage_confidence}',
+    pages_loaded = {total_pages_discovered},
+    sections_assessed = ['{section_1}', '{section_2}', ...],
+    evidence_gaps = ['{gap_1}', '{gap_2}', ...]
+WHERE analysis_id = '{analysis_id}'
+```
+
+**If no row exists** — insert a new one with `analysis_type = 'ms_crawl'`:
+
+```sql
+SELECT GENERATE_UUID() AS analysis_id
+```
+
+```sql
+INSERT INTO sector_intelligence.ms_analyses
+  (analysis_id, company, domain, generated_at, analysis_type,
+   coverage_confidence, pages_loaded, sections_assessed,
+   evidence_gaps, loaded_at)
+VALUES (
+  '{analysis_id}',
+  '{company}',
+  '{domain}',
+  CURRENT_TIMESTAMP(),
+  'ms_crawl',
+  '{coverage_confidence}',
+  {total_pages_discovered},
+  ['{section_1}', '{section_2}', ...],
+  ['{gap_1}', '{gap_2}', ...],
+  CURRENT_TIMESTAMP()
+)
+```
+
+**Do not block:** If any query fails, proceed to Stage completion.
+
+---
+
 ## Stage completion
 
 After saving both output files, show a clean summary:

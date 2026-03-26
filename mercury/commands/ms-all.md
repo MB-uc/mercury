@@ -16,7 +16,7 @@ Run the full Mercury Strategy pipeline for the specified company.
 ## What happens
 
 1. **Stage 1 — Brief** (`/ms-brief`): Company identity, benchmark check, situational awareness, website inventory, document extraction
-2. **Stage 2 — Crawl** (`/ms-crawl`): Five-pass site discovery producing a page-level evidence pack
+2. **Stage 2 — Crawl** (`/ms-crawl`): Four-source site discovery producing a page-level evidence pack
 3. **Stage 3 — Findings** (`/ms-findings`): Strategic synthesis — archetype checks, audience assessment, findings, strategic implications
 
 Each stage saves its output files before the next stage begins. The only pauses are:
