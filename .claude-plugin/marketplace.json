@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "mercury",
-      "version": "6.3.0",
+      "version": "6.3.1",
       "source": "./mercury",
       "description": "Mercury v6 — IDX consultant engagement preparation"
     }
